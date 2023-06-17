@@ -1,0 +1,4 @@
+#!/bin/bash
+
+# Clean time dirs
+rm -rf [1-9]* > /dev/null 2>&1 ; rm -rf 0.[0-9]* > /dev/null 2>&1

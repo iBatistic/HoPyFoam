@@ -1,0 +1,8 @@
+#!/bin/bash
+
+rootFolder="../../.."
+solver="laplacianFoam.py"
+
+./Allclean
+
+python3 $rootFolder/applications/solvers/$solver -d

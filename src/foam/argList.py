@@ -1,8 +1,8 @@
 """
- _____     _____     _____ _____ _____      |  Python code for High-order FVM
-|  |  |___|  _  |_ _|   __|  |  |     |     |  Python Version: 3.10
-|     | . |   __| | |   __|  |  | | | |     |  Code Version: 0.0
-|__|__|___|__|  |_  |__|   \___/|_|_|_|     |  License: GPLv3
+ _____     _____     _____ _____ _____ _____    |  High-order Python FOAM
+|  |  |___|  _  |_ _|   __|     |  _  |     |   |  Python Version: 3.10
+|     | . |   __| | |   __|  |  |     | | | |   |  Code Version: 0.0
+|__|__|___|__|  |_  |__|  |_____|__|__|_|_|_|   |  License: GPLv3
                 |___|
 Description
     Function arg_parse returns arguments and is called from the application.
@@ -19,14 +19,13 @@ from datetime import datetime
 
 import __main__
 
-BANNER = '\
-     _____     _____     _____ _____ _____      |  Python code for High-order FVM\n\
-    |  |  |___|  _  |_ _|   __|  |  |     |     |  Python Version: 3.10\n\
-    |     | . |   __| | |   __|  |  | | | |     |  Code Version: 0.0\n\
-    |__|__|___|__|  |_  |__|   \___/|_|_|_|     |  License: GPLv3\n\
-                    |___|\n\
-    '
-
+BANNER = '''\
+ _____     _____     _____ _____ _____ _____    |  High-order Python FOAM\n\
+|  |  |___|  _  |_ _|   __|     |  _  |     |   |  Python Version: 3.10\n\
+|     | . |   __| | |   __|  |  |     | | | |   |  Code Version: 0.0\n\
+|__|__|___|__|  |_  |__|  |_____|__|__|_|_|_|   |  License: GPLv3\n\
+                |___|\n\
+    '''
 
 def arg_parser() -> argparse.ArgumentParser:
     """ Parse arguments using argparse module"""
@@ -42,10 +41,8 @@ def arg_parser() -> argparse.ArgumentParser:
     # Standard arguments
     parser.add_argument('-d',
                         '--debug',
-                        help='debug code',
-                        type=bool,
-                        required=False,
-                        dest='debug')
+                        action='store_true',
+                        help='Enable debug mode')
 
     # Mutually exlusive arguments
     group = parser.add_mutually_exclusive_group()
