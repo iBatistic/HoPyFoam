@@ -19,7 +19,7 @@ It is based on [numpy](https://numpy.org/) and [petsc4py](https://petsc.org/rele
 
 
 ### License
-This toolkit is released under the GNU General Public License (version 3). More details can be found in the [LICENSE](LICENSE.md) file.
+This toolkit is released under the GNU General Public License (version 3). More details can be found in the [LICENSE](LICENSE.txt) file.
 
 ### Disclaimer
 This offering is not approved or endorsed by OpenCFD Limited, producer and distributor of the OpenFOAM software via (www.openfoam.com)[https://www.openfoam.com/}, and owner of the OPENFOAM® and OpenCFD® trade marks.
