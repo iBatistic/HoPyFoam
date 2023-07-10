@@ -11,6 +11,7 @@ import re
 import numpy as np
 
 POLYMESH = 'constant/polyMesh'
+SYSTEM = 'system'
 
 def read_points_file() -> np.ndarray:
 
@@ -116,6 +117,31 @@ def read_boundary_File() -> dict:
 
     return boundary
 
+def read_controlDict_file() -> dict:
+
+    with open(SYSTEM + '/controlDict') as f:
+
+        file = f.read()
+        file = remove_cpp_comments(file)
+        file = remove_foamFile_dict(file)
+        file = re.sub(r';', '', file)
+
+        file = [line for line in file.splitlines() if line.strip()]
+        controlDict = dict()
+
+        for i in file:
+            # Split line using one or more spaces
+            line = re.split(r'\s+', i)
+
+            # Read line only if it has two enties, otherwise something probably
+            # went wrong
+            if len(line) != 2 or line[0] == '' or line[1] == '':
+                raise TypeError("Something went wrong when parsing controlDict")
+            else:
+                controlDict.update({line[0]: convert_to_float(line[1])})
+
+        return controlDict
+
 #https://stackoverflow.com/questions/241327/remove-c-and-c-comments-using-python
 def remove_cpp_comments(text):
     def replacer(match):
@@ -137,8 +163,27 @@ def remove_foamFile_dict(text):
     text = re.sub(r'{[^}]*}*', '', text, 1)
     return text
 
-def convert_to_int(string):
+def convert_to_int(string, check=False):
+    if (check):
+        if np.char.isdigit(string):
+            return int(string)
+        else:
+            raise ValueError("Integer digit expected")
+
     if np.char.isdigit(string):
         return int(string)
+    else:
+        return string
+
+
+def convert_to_float(string, check=False):
+    if (check):
+        if np.char.isdigit(string):
+            return float(string)
+        else:
+            raise ValueError("Float digit expected")
+
+    if np.char.isdigit(string):
+        return float(string)
     else:
         return string

@@ -19,6 +19,7 @@ libs ("libImplicitSolidContact.so");
 
 application     banana;
 
+
 startFrom       startTime;
 
 startTime       0;
