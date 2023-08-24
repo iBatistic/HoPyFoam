@@ -29,26 +29,23 @@ boundaryField
 
     top
     {
-        //type            impExpRigidContact;
-        type            implicitRigidContact;
-        //type            coupledImplicitRigidContact;
-        relaxationFactor 1;//0.3;
-        penaltyFactor   1e14;
-        planeCoeffs
-        {
-            n          (0 1 0);
-            refPoint   (0 0.99 0);
-        }
+        type            fixedDisplacement;
         value	        uniform (0 0 0);
     }
 
-    brickSides
+    left
     {
-        type            solidTractionFree;
-        value           uniform (0 0 0);
+        type            fixedDisplacement;
+        value	        uniform (0 0 0);
+    }
+    
+    right
+    {
+        type            fixedDisplacement;
+        value	        uniform (0 0 0);
     }
 
-    frontAndBack
+    frontAndBackPlanes
     {
         type            empty;
     }

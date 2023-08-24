@@ -20,14 +20,14 @@ Ta = 0
 Tb = 0
 
 # Number of control volumes
-N = int(10)
+N = int(11)
 
 # Number of terms in Taylor expansion
-Np = 5
+Np = 10
 
 # Number of face west and east neighbours
-Nn_west = 4
-Nn_east = 4
+Nn_west = 5
+Nn_east = 5
 
 '''
 --------------------------------------------------------------------------------
@@ -310,6 +310,7 @@ print(f'L_infinty error: {Linf:.10f}')
 
 
 mesh_size = [10, 100, 1000]
+
 L_2_p5 = [0.0152759845, 0.0000053969,  0.0000000004]
 L_inf_p5 = [0.0310252646, 0.0000106041, 0.0000000009]
 
@@ -364,10 +365,25 @@ plt.xlabel('$n_b$', fontsize = 12, weight = 600)
 plt.ylabel('$L_{\infty}$', fontsize = 12, weight = 600)
 plt.grid(True, color='gray', linestyle='--', linewidth=0.5, alpha=0.5)
 plt.plot( mesh_size, L_inf_p5, '-o', mesh_size, L_inf_p4, '-o', mesh_size, L_inf_p3, '-o', mesh_size, L_inf_p2, '-o', markersize = 2)
-plt.plot( mesh_size, L_inf_2, '--', color = "red", linewidth = 1)
-plt.plot( mesh_size, L_inf_3, '--', color = 'green', linewidth = 1)
-plt.plot( mesh_size, L_inf_4, '--', color = 'orange',  linewidth = 1)
-plt.plot( mesh_size, L_inf_5, '--', color = 'blue',  linewidth = 1)
+#plt.plot( mesh_size, L_inf_2, '--', color = "red", linewidth = 1)
+#plt.plot( mesh_size, L_inf_3, '--', color = 'green', linewidth = 1)
+#plt.plot( mesh_size, L_inf_4, '--', color = 'orange',  linewidth = 1)
+#plt.plot( mesh_size, L_inf_5, '--', color = 'blue',  linewidth = 1)
 plt.legend(['5 order','4 order', '3 order', '2 order'])
 plt.savefig('Linfty.png', bbox_inches='tight')
+plt.show()
+
+sol_2 = [ -9.099325166253853e-05, 0.1251427577696729, 0.36839227073774666, 0.6865144131917624, 0.9556683503208502, 0.9554863638175252, 0.474698011694269, -0.40339413748168007, -1.0443846114782465, -0.6282275374662959]
+#sol_4 = [12.54157, 11.80158, 7.48726, -4.89682,-26.93359,-48.06064 ,-39.73038, 23.71017 ,105.71475, 84.0298]
+print(T)
+plt.figure()
+plt.title('Solution on mesh with 10 CVs (each face has 10 neighbours)', fontsize = 12, weight = 600)
+plt.xlabel('$x$', fontsize = 12, weight = 600)
+plt.ylabel('$T$', fontsize = 12, weight = 600)
+plt.grid(True, color='gray', linestyle='--', linewidth=0.5, alpha=0.5)
+plt.plot( xa, Ta, '-',color = "black", linewidth = 0.5)
+plt.plot( xc, T, 'o', color = "blue",  markersize = 3)
+#plt.plot( xc, sol_2, 'o', color = "red", linewidth = 1, markersize = 3)
+plt.legend(['analytical','Np = 10','2 order'])
+plt.savefig('4vs2order.png', bbox_inches='tight')
 plt.show()

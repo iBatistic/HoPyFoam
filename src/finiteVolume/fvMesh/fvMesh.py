@@ -118,7 +118,6 @@ class fvMesh(polyMesh):
                 tet = tetrahedron(tetPoints)
 
                 tetVolume = tet.mag()
-                print(tetVolume)
                 C[self._owner[facei]] += tetVolume * tet.centre()
                 V[self._owner[facei]] += tetVolume
 
