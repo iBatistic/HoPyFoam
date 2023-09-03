@@ -1,4 +1,4 @@
-name: Check Added Files
+name: Check Added Files Format
 
 on:
   push:
@@ -13,21 +13,18 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Identify added files
-        id: modified_and_added_files
+      - name: Get changed files
+        id: changed-files
+        uses: tj-actions/changed-files@v38
+
+      - name: Run the checkFileHeader script on added files
         run: |
-          # Get a list of added files
-          modified_and_added_files=$(git diff --name-only --diff-filter=AM ${{ github.event.before }} ${{ github.sha }} | grep -E "^.*")
-
-          # Store the list as an output for later steps
-          echo "::set-output name=modified_and_added_files::$modified_and_added_files"
-
-      - name: Run script on added files
-        run: |
-          # Fetch the list of added files from the previous step's output
-          modified_and_added_files="${{ steps.modified_and_added_files.outputs.modified_and_added_files }}"
-
           # Run script on each added file
-          for file in $modified_and_added_files; do
-            ./../../applications/scripts/checkFileHeader.sh "$file"
+          for file in ${{ steps.changed-files.outputs.all_changed_files }}; do
+
+            extension="${file##*.}"
+
+            if [ "$extension" == "py" ]; then
+              ./../../applications/scripts/checkFileHeader.sh "$file"
+            fi
           done
