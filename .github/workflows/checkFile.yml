@@ -9,12 +9,9 @@ jobs:
   check_added_files:
     runs-on: ubuntu-latest
 
-    steps:
+    steps:       
       - name: Checkout code
-        uses: actions/checkout@v1
-        
-      - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Get changed files
         id: changed-files
@@ -26,13 +23,9 @@ jobs:
           for file in ${{ steps.changed-files.outputs.all_changed_files }}; do
 
             extension="${file##*.}"
-
-            chmod +x ./checkFileHeader.sh
-            #bash ./checkFileHeader.sh test.py
-
-            #chmod +x ./applications/scripts/checkFileHeader.sh
+            chmod +x ./applications/scripts/checkFileHeader.sh
             
             if [ "$extension" == "py" ]; then
-              ./checkFileHeader.sh "$file"
+              ../applications/scripts/checkFileHeader.sh "$file"
             fi
           done
