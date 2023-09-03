@@ -10,7 +10,7 @@ Description
 """
 __author__ = 'Ivan Batistić & Philip Cardiff'
 __email__ = 'ibatistic@fsb.hr, philip.cardiff@ucd.ie'
-__all__ = ['arg_parser']
+asdasdas__all__ = ['arg_parser']
 
 import argparse
 asdasdimport os
