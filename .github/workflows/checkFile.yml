@@ -25,6 +25,7 @@ jobs:
             extension="${file##*.}"
             echo "Current directory: $(pwd)"
             ls
+            ls applications/scripts/
             chmod +x ./applications/scripts/checkFileHeader.sh
             
             if [ "$extension" == "py" ]; then
