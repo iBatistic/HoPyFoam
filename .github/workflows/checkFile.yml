@@ -23,7 +23,8 @@ jobs:
           for file in ${{ steps.changed-files.outputs.all_changed_files }}; do
 
             extension="${file##*.}"
-
+            chmod +x ./applications/scripts/checkFileHeader.sh
+            
             if [ "$extension" == "py" ]; then
               ./applications/scripts/checkFileHeader.sh "$file"
             fi
