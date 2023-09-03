@@ -1,0 +1,33 @@
+name: Check Added Files
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  check_added_files:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Identify added files
+        id: added_files
+        run: |
+          # Get a list of added files
+          added_files=$(git diff --name-only ${{ github.event.before }} ${{ github.event.after }} | grep -E "^.*")
+
+          # Store the list as an output for later steps
+          echo "::set-output name=added_files::$added_files"
+
+      - name: Run script on added files
+        run: |
+          # Fetch the list of added files from the previous step's output
+          added_files="${{ steps.added_files.outputs.added_files }}"
+
+          # Run script on each added file
+          for file in $added_files; do
+            ./../../applications/scripts/checkFileHeader.sh "$file"
+          done
