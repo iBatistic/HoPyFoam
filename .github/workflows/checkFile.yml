@@ -25,9 +25,12 @@ jobs:
           # Run script on each added file
           for file in ${{ steps.changed-files.outputs.all_changed_files }}; do
 
+            bash ./checkFileHeader.sh test.py
+            
             extension="${file##*.}"
             echo "Current directory: $(pwd)"
             ls
+            ls applications/
             ls applications/scripts/
             chmod +x ./applications/scripts/checkFileHeader.sh
             
