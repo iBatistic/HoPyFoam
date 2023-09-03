@@ -25,20 +25,14 @@ jobs:
           # Run script on each added file
           for file in ${{ steps.changed-files.outputs.all_changed_files }}; do
 
-            
             extension="${file##*.}"
-            echo "Current directory: $(pwd)"
-            ls
-            ls applications/
-            ls applications/scripts/
 
+            chmod +x ./checkFileHeader.sh
+            #bash ./checkFileHeader.sh test.py
 
-            chmod +x ./checkFileHeader.sh test.py
-            bash ./checkFileHeader.sh test.py
-
-            chmod +x ./applications/scripts/checkFileHeader.sh
+            #chmod +x ./applications/scripts/checkFileHeader.sh
             
             if [ "$extension" == "py" ]; then
-              ./applications/scripts/checkFileHeader.sh "$file"
+              ./checkFileHeader.sh "$file"
             fi
           done
