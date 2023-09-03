@@ -25,6 +25,6 @@ jobs:
             extension="${file##*.}"
 
             if [ "$extension" == "py" ]; then
-              ./../../applications/scripts/checkFileHeader.sh "$file"
+              ./applications/scripts/checkFileHeader.sh "$file"
             fi
           done
