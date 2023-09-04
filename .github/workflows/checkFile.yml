@@ -18,10 +18,11 @@ jobs:
         uses: tj-actions/changed-files@v38
 
       - name: Run the checkFileHeader script on added files
+        uses: actions/checkout@v3
         run: |
           # Run the script on each added file
           for file in ${{ steps.changed-files.outputs.all_changed_files }}; do
-          
+            
             extension="${file##*.}"
             chmod +x ./applications/scripts/checkFileHeader.sh
             
