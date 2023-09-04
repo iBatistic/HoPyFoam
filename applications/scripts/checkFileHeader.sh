@@ -37,15 +37,8 @@ if [[ $# -ne 1 ]]; then
     exit 1
 fi
 
-filename=$1
-extension="${1##*.}"
-echo $extension
 # Call the check_header function with the provided file argument
 check_header "$1"
-
-if [ "$extension" == "py" ]; then
-    echo "valja ekstenzija"
-fi
 
 # Check the return value and set the exit value
 if [[ $? -eq 0 ]]; then

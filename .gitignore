@@ -1,6 +1,10 @@
 literature/
 test/
 doc/
+*.wip
+
+# Pictures
+*.png
 
 # OpenFOAM mesh files
 faces
