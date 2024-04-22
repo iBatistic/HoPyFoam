@@ -55,6 +55,61 @@ class face():
 
         return centre
 
+    def GaussPointsAndWeights(self, GaussPoinsNb, emptyDir) -> ([np.ndarray], [np.ndarray]):
+
+        if emptyDir is None:
+            # 3D case, Gauss points are distributed on face
+            # TO_DO
+            pass
+        else:
+            # 2D case, Gauss points are distributed on the line
+            GaussPoints, weights = np.polynomial.legendre.leggauss(GaussPoinsNb)
+
+            facePoints = self.points()
+
+            # Project faces onto normal plane defined with emtyDir
+            faceIn2D = [point[:emptyDir] for point in facePoints]
+
+            unique_lists = set()
+            tol = 1e-6
+
+            # Remove duplicate points using specified tolerance
+            for point in faceIn2D:
+                # Convert the inner list to a tuple and add it to the set if it is not similar
+                # to any existing tuple
+                if not any(np.all(np.isclose(point, np.array(points), atol=tol)) for
+                           points in unique_lists):
+                    unique_lists.add(tuple(point))
+
+            # Convert the set back to a list of lists
+            # Now each face has 2 points with 2 coordinates
+            faceIn2D = [list(inner_tuple) for inner_tuple in unique_lists]
+
+            # Get position of gauss points using face points
+            # Scale weights of the quadrature because we are not integrating from -1 to 1
+            faceGaussPoints = []
+            faceWeights = []
+
+            for gp,w in zip(GaussPoints, weights):
+                pointA = np.array(faceIn2D[1])
+                pointB = np.array(faceIn2D[0])
+                halfFaceLen = np.linalg.norm(pointA - pointB) / 2
+                halfFacePoint = pointB + (pointA - pointB)/2
+
+                faceGaussPoint = halfFacePoint + halfFaceLen*gp
+                faceWeight = w * halfFaceLen
+
+                faceGaussPoints.append(faceGaussPoint)
+                faceWeights.append(faceWeight)
+
+            # Face centre in empty direction
+            faceCentreEmptyDir = self.centre()[emptyDir]
+
+            # Make 3D points from 2D points
+            faceGaussPoints = [[point[0], point[1], faceCentreEmptyDir] for point in faceGaussPoints]
+
+            return faceGaussPoints, faceWeights
+
     def normal(self):
 
         nPoints = len(self._facePoints)

@@ -9,40 +9,40 @@ FoamFile
 {
     version     2.0;
     format      ascii;
-    class       volVectorField;
+    class       volScalarField;
     location    "0";
-    object      U;
+    object      T;
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-dimensions      [0 1 0 0 0 0 0];
+dimensions      [0 0 0 1 0 0 0];
 
-internalField   uniform (0 0 0);
+internalField   uniform 1;
 
 boundaryField
 {
     bottom
     {
-        type            fixedDisplacement;
-        value	        uniform (0 0 0);
+        type            fixedValue;
+        value	        uniform 0;
     }
 
     top
     {
-        type            fixedDisplacement;
-        value	        uniform (0 0 0);
+        type            fixedValue;
+        value	        uniform 0;
     }
 
     left
     {
-        type            fixedDisplacement;
-        value	        uniform (0 0 0);
+        type            fixedValue;
+        value	        uniform 0;
     }
     
     right
     {
-        type            fixedDisplacement;
-        value	        uniform (0 0 0);
+        type            fixedValue;
+        value	        uniform 1;
     }
 
     frontAndBackPlanes

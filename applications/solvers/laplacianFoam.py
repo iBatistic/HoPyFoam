@@ -17,7 +17,9 @@ import os
 sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/../../.")
 from src.finiteVolume.fvMesh import fvMesh
 from src.foam.argList import arg_parser
+from src.foam.foamFileParser import *
 from src.finiteVolume.cfdTools import solutionControl
+from src.foam.field.volField.volScalarField import volScalarField
 
 # Execution start time, used to measured elapsed clock time
 exec_start_time = timeModule.perf_counter()
@@ -25,8 +27,15 @@ exec_start_time = timeModule.perf_counter()
 # Get command line arguments
 args = arg_parser().parse_args()
 
+# Read and construct mesh, construct interpolation stencil
 mesh = fvMesh()
 solControl = solutionControl()
+
+# Create field
+print('Reading field T \n')
+
+# Initialise scalar field T
+T = volScalarField("T", mesh, readBoundaryAndInitialConditions("T"))
 
 while(solControl.loop()):
 
@@ -35,6 +44,13 @@ while(solControl.loop()):
     '''
         Assemble and solve system of equations
     '''
+    # Assemble the Laplacian matrix contributions
+    #laplacianMatrix = fvm.construct(T, 'laplacian', laplacianScheme, [DT])
+
+    # The actual matrix to solve for
+    #matrix = ddtMatrix - laplacianMatrix
+
+    #matrix.solve(fvSolution_T)
 
     print(f'Execution time = '
           f'{timeModule.perf_counter() - exec_start_time:.2f} s \n')

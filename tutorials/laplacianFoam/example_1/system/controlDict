@@ -15,10 +15,8 @@ FoamFile
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-libs ("libImplicitSolidContact.so");
 
 application     banana;
-
 
 startFrom       startTime;
 

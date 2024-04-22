@@ -27,6 +27,7 @@ class polyMesh:
         self._owner = foamFileParser.read_owner_file()
         self._neigbour = foamFileParser.read_neighbour_file()
         self._boundary = foamFileParser.read_boundary_File()
+        print(f'polyMesh boundary: {self._boundary}')
 
 
 class fvMesh(polyMesh):
@@ -42,8 +43,23 @@ class fvMesh(polyMesh):
     def nb_faces(self) -> int:
         return np.size(self._polyMesh__faces, axis=0)
 
+    def faces(self) -> face:
+        return self.__faces
+
+    def owners(self) -> np.ndarray:
+        return self._owner
+
+    def C(self) -> np.ndarray:
+        return self._C
+
+    def internalFaceNb(self) -> int:
+        return self.nb_faces()-self.boundaryFaceNb()
+
+    def boundaryFaceNb(self) -> int:
+        return np.size(self._owner, axis=0) - np.size(self._neigbour, axis=0)
+
     # Number of control volumes
-    def nb_cvs(self):
+    def nb_cvs(self) -> int:
         return self._owner.max() + 1
 
     @timed
@@ -75,6 +91,7 @@ class fvMesh(polyMesh):
             magSf[i] = faceI.mag()
 
         return Cf, magSf, Sf
+
 
     # TODO: Cell is not decoposed into
     @timed

@@ -3,11 +3,12 @@
 solversFolder="../../../applications/solvers"
 solver="laplacianFoam.py"
 
-./Allclean
-
-#blockMesh
+# Make mesh using following commands
 #fe41
-#fluentMeshToFoam tri_coarse.msh
-#fluentMeshToFoam tri_fine.msh 
+#blockMesh
+#fluentMeshToFoam tri_coarse.msh#blockMesh
+#fluentMeshToFoam tri_fine.msh
+
+./Allclean
 
 python3 $solversFolder/$solver
