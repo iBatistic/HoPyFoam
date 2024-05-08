@@ -96,7 +96,7 @@ class face():
                 halfFaceLen = np.linalg.norm(pointA - pointB) / 2
                 halfFacePoint = pointB + (pointA - pointB)/2
 
-                faceGaussPoint = halfFacePoint + halfFaceLen*gp
+                faceGaussPoint = halfFacePoint + halfFaceLen*gp*(pointA-pointB)/(2*halfFaceLen)
                 faceWeight = w * halfFaceLen
 
                 faceGaussPoints.append(faceGaussPoint)

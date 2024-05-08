@@ -20,6 +20,7 @@ from src.foam.argList import arg_parser
 from src.foam.foamFileParser import *
 from src.finiteVolume.cfdTools import solutionControl
 from src.foam.field.volField.volScalarField import volScalarField
+from src.finiteVolume.fvMatrices.fvm.fvm import fvm
 
 # Execution start time, used to measured elapsed clock time
 exec_start_time = timeModule.perf_counter()
@@ -31,9 +32,6 @@ args = arg_parser().parse_args()
 mesh = fvMesh()
 solControl = solutionControl()
 
-# Create field
-print('Reading field T \n')
-
 # Initialise scalar field T
 T = volScalarField("T", mesh, readBoundaryAndInitialConditions("T"))
 
@@ -41,16 +39,14 @@ while(solControl.loop()):
 
     print(f'Time = {solControl.time()} \n')
 
-    '''
-        Assemble and solve system of equations
-    '''
-    # Assemble the Laplacian matrix contributions
-    #laplacianMatrix = fvm.construct(T, 'laplacian', laplacianScheme, [DT])
+    # Assemble the Laplacian matrix
+    laplacianMatrix = fvm.construct(T, 'laplacian', 'DT')
 
-    # The actual matrix to solve for
-    #matrix = ddtMatrix - laplacianMatrix
+    # Solve Laplacian matrix
+    laplacianMatrix.solve()
 
-    #matrix.solve(fvSolution_T)
+    # Write results
+    T.write(solControl.time())
 
     print(f'Execution time = '
           f'{timeModule.perf_counter() - exec_start_time:.2f} s \n')

@@ -10,6 +10,7 @@ Description
 
 from time import perf_counter
 from functools import wraps
+import os
 
 def timed(fn):
 
@@ -29,8 +30,20 @@ def timed(fn):
         # print('Function {0}({1}) took {2:.6f}s to run'.format(fn.__name__,
         #                                                 args_str, elapsed))
 
-        print('{0}.{1} took {2:.6f}s to run'.format(self.__class__.__name__,
-                                                    fn.__name__, elapsed))
+        #print('--> @timed decorator; function {0}.{1} took {2:.6f}s to run'\
+        #      .format(self.__class__.__name__, fn.__name__, elapsed))
+
+        # Write to file instead to console
+        fileName = "timed.txt"
+        if os.path.exists(fileName):
+            file = open(fileName, "a")
+        else:
+            file = open(fileName, 'w')
+
+        file.write('--> @timed decorator; function {0}.{1} took {2:.6f}s to run\n'\
+              .format(self.__class__.__name__, fn.__name__, elapsed))
+
+        file.close()
 
         return result
 

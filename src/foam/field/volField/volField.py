@@ -48,7 +48,7 @@ class volField(field, volFieldBoundaryConditions):
     # TO_DO: Only works for scalar because initialValue is parsed as scalar, be careful with this later on!
     @classmethod
     def initCellValues(self, mesh, initialValue, dimensions):
-        nCells = mesh.nb_cvs()
+        nCells = mesh.nCells()
         # Initialise cell values to 1 and multiply then with corresponding initialValue
         cellValues = np.ones((dimensions, nCells), dtype=float)
 
@@ -58,6 +58,7 @@ class volField(field, volFieldBoundaryConditions):
 
         return cellValues
 
+    # TO_DO: extend to account for vector, now is written for scalar values
     @classmethod
     def initBoundaryValues(self, mesh, boundaryConditionsDict):
         dimensions = self._dimensions
@@ -67,16 +68,16 @@ class volField(field, volFieldBoundaryConditions):
         boundaryValues = \
             np.zeros((dimensions, boundaryFaceNb), dtype=float)
 
-        # Loop over patches and call corresponding patch updateCoeffs function
+        # Loop over patches and call corresponding patch evaluate function
         for patch in boundaryConditionsDict:
             patchName = str(patch)
             patchType = boundaryConditionsDict[patchName]['type']
             if(patchType != 'empty'):
                 patchValue = boundaryConditionsDict[patchName]['value']['uniform']
 
-            updatePatchCoeffs = eval("self.updatePatchCoeffs." + patchType)
+            evaluate = eval("self.evaluate." + patchType)
 
-            updatePatchCoeffs(mesh, patchName, patchValue, boundaryValues)
+            evaluate(mesh, patchName, patchValue, boundaryValues, dimensions)
 
         return boundaryValues
 
@@ -85,19 +86,19 @@ class volField(field, volFieldBoundaryConditions):
         print(f"Calculating interpolation stencil for field {self._fieldName}")
 
         # Number of cells in stencil
-        Nn = 4
+        Nn = self._Nn
         facesMolecule = []
 
         for faceI in range(len(self._mesh._Cf)):
 
-            internalFacesNb = self._mesh.internalFaceNb()
+            internalFacesNb = self._mesh.nInternalFaces()
 
             # Construct interpolation molecule for internal and boudnary face
             # Loop over control volumes and take closest Nn neighbours
             distances = []
             faceCf = self._mesh._Cf[faceI]
 
-            for cellI in range(self._mesh.nb_cvs()):
+            for cellI in range(self._mesh.nCells()):
                 distance = np.linalg.norm(self._mesh.C()[cellI] - faceCf)
                 distances.append((cellI, distance))
 
@@ -125,7 +126,7 @@ class volField(field, volFieldBoundaryConditions):
         print(f"Calculating Gauss integration points for field {self._fieldName}")
 
         # Each face has list of corresponding Gauss points and their weights
-        facesGaussPointsAndWeights = [[]]
+        facesGaussPointsAndWeights = []
 
         # Loop over patches and check is there empty patches
         # If there are empty patches, Gauss points are calculated in one plane
@@ -145,3 +146,6 @@ class volField(field, volFieldBoundaryConditions):
             facesGaussPointsAndWeights.insert(faceI,[weights, GaussPoints])
 
         return facesGaussPointsAndWeights
+
+    def LRE(self) -> localRegressionEstimator:
+        return self._LRE

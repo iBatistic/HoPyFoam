@@ -9,9 +9,10 @@ Description
     solution loop.
 """
 
-from src.foam.foamFileParser import read_controlDict_file
+from src.foam.foamFileParser import *
 
 class solutionControl():
+
     def __init__(self):
         self._controlDict = read_controlDict_file()
         self._time = 0.0
@@ -25,6 +26,7 @@ class solutionControl():
 
         if(self._startFrom == 'startTime'):
             self._time = self._startTime
+
     def controlDict(self):
         return self._controlDict
 

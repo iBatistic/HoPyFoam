@@ -18,11 +18,10 @@ class field():
     def __init__(self, fieldName="None"):
         self._fieldName = fieldName
 
-    def updateBoundary(self):
-        print('sds')
-        #self._boundary = "empty"
-
-    def updateField(self):
-        print('sdsdasdsa')
-        #self._field = "empty"
-
+    # foamFile banner
+    def foamFile(self, fieldType, fieldName, timeValue):
+        banner = 'FoamFile\n{\n    version     2.0;\n    format      ascii;\n'
+        banner += '    class       ' + fieldType + ';\n'
+        banner += '    location    "' + str(timeValue) + '";\n'
+        banner += '    object     ' + fieldName + ';\n}\n'
+        return banner

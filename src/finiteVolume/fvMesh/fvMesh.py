@@ -27,21 +27,29 @@ class polyMesh:
         self._owner = foamFileParser.read_owner_file()
         self._neigbour = foamFileParser.read_neighbour_file()
         self._boundary = foamFileParser.read_boundary_File()
-        print(f'polyMesh boundary: {self._boundary}')
-
 
 class fvMesh(polyMesh):
 
     def __init__(self):
+        print("Creating mesh\n")
         super().__init__()
         self.__faces = self._make_faces()
         self._Cf, self._magSf, self._Sf = self._make_faces_data()
         self._V, self._C = self._make_cells_data()
-        self._meshSize = self.nb_cvs()
+        self._meshSize = self.nCells()
 
     # Number of faces
     def nb_faces(self) -> int:
         return np.size(self._polyMesh__faces, axis=0)
+
+    def nFaces(self) -> int:
+        return np.size(self._polyMesh__faces, axis=0)
+
+    def magSf(self) -> np.ndarray:
+        return self._magSf
+
+    def nf(self) -> np.ndarray:
+        return self._Sf/self._magSf
 
     def faces(self) -> face:
         return self.__faces
@@ -52,14 +60,42 @@ class fvMesh(polyMesh):
     def C(self) -> np.ndarray:
         return self._C
 
-    def internalFaceNb(self) -> int:
+    def facePatchType(self, faceI, volField) -> str:
+        if(faceI < self.nInternalFaces()-1):
+            raise IndexError(
+                "Face index {} corresponds to internal face".format(faceI))
+
+        boundary = self._boundary
+        for patch in boundary:
+            startFace = boundary[patch]['startFace']
+            nFaces = boundary[patch]['nFaces']
+            if(faceI >= startFace and faceI < nFaces+startFace):
+                #print(f'face {faceI} is on {patch} with start face {startFace} ')
+                return volField._boundaryConditionsDict[patch]['type']
+
+    def facePatchName(self, faceI, volField) -> str:
+        if(faceI < self.nInternalFaces()-1):
+            raise IndexError(
+                "Face index {} corresponds to internal face".format(faceI))
+
+        boundary = self._boundary
+        for patch in boundary:
+            startFace = boundary[patch]['startFace']
+            nFaces = boundary[patch]['nFaces']
+            if(faceI >= startFace and faceI < nFaces+startFace):
+                return patch
+
+    def Cf(self) -> np.ndarray:
+        return self._Cf
+
+    def nInternalFaces(self) -> int:
         return self.nb_faces()-self.boundaryFaceNb()
 
     def boundaryFaceNb(self) -> int:
         return np.size(self._owner, axis=0) - np.size(self._neigbour, axis=0)
 
     # Number of control volumes
-    def nb_cvs(self) -> int:
+    def nCells(self) -> int:
         return self._owner.max() + 1
 
     @timed
@@ -82,7 +118,7 @@ class fvMesh(polyMesh):
 
         Cf = np.zeros((self.nb_faces(), 3), float)
         Sf = np.zeros((self.nb_faces(), 3), float)
-        magSf = np.zeros(self.nb_faces(), float)
+        magSf = np.zeros((self.nb_faces(), 1), float)
 
         for i in range(self.nb_faces()):
             faceI = self.__faces[i]
@@ -97,11 +133,11 @@ class fvMesh(polyMesh):
     @timed
     def _make_cells_data(self) -> tuple[np.ndarray, np.ndarray]:
 
-        V = np.zeros(self.nb_cvs(), float)
-        C = np.zeros((self.nb_cvs(), 3), float)
+        V = np.zeros(self.nCells(), float)
+        C = np.zeros((self.nCells(), 3), float)
 
-        nCellFaces = np.zeros(self.nb_cvs(), int)
-        Cestimated = np.zeros((self.nb_cvs(), 3), float)
+        nCellFaces = np.zeros(self.nCells(), int)
+        Cestimated = np.zeros((self.nCells(), 3), float)
 
         # Estimate cell centre by simple average of cell face centres
         for facei in range(self._owner.size):

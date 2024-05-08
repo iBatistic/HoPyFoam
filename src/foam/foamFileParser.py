@@ -10,9 +10,11 @@ Description
 import re
 import numpy as np
 
-POLYMESH = 'constant/polyMesh'
+CONSTANT = 'constant/'
+POLYMESH = CONSTANT + 'polyMesh'
 SYSTEM = 'system'
 ZERO = '0'
+
 
 def read_points_file() -> np.ndarray:
     try:
@@ -26,11 +28,11 @@ def read_points_file() -> np.ndarray:
             nPoints = int(file[0])
             points = np.empty([nPoints, 3], dtype=float)
 
-            for i in range(1,len(file),3):
-                index = int(i/3)
+            for i in range(1, len(file), 3):
+                index = int(i / 3)
                 points[index][0] = file[i]
-                points[index][1] = file[i+1]
-                points[index][2] = file[i+2]
+                points[index][1] = file[i + 1]
+                points[index][2] = file[i + 2]
 
     except FileNotFoundError:
         print(f"Error: {POLYMESH}/points not found!")
@@ -39,8 +41,8 @@ def read_points_file() -> np.ndarray:
 
     return points
 
-def read_faces_file() -> np.ndarray:
 
+def read_faces_file() -> np.ndarray:
     try:
         with open(POLYMESH + '/faces') as f:
             file = f.read()
@@ -50,14 +52,14 @@ def read_faces_file() -> np.ndarray:
 
             file = file.split()
             nFaces = int(file.pop(0))
-            faces = np.empty(nFaces, dtype = object)
+            faces = np.empty(nFaces, dtype=object)
 
             faceCounter = 0
             for i in range(nFaces):
                 faceSize = int(file[faceCounter])
                 face = np.empty(faceSize, int)
                 for j in range(int(file[faceCounter])):
-                    face[j] = file[faceCounter+j+1]
+                    face[j] = file[faceCounter + j + 1]
                 faces[i] = face
                 faceCounter += faceSize + 1
 
@@ -67,6 +69,7 @@ def read_faces_file() -> np.ndarray:
         print(f"An error occured: {e}")
 
     return faces
+
 
 def read_owner_file() -> np.ndarray:
     try:
@@ -80,8 +83,8 @@ def read_owner_file() -> np.ndarray:
             nOwner = int(file[0])
             owner = np.empty(nOwner, dtype=int)
 
-            for i in range(1,len(file),1):
-                owner[i-1] = file[i]
+            for i in range(1, len(file), 1):
+                owner[i - 1] = file[i]
 
     except FileNotFoundError:
         print(f"Error: {POLYMESH}/owner not found!")
@@ -90,7 +93,8 @@ def read_owner_file() -> np.ndarray:
 
     return owner
 
-def read_neighbour_file()  -> np.ndarray:
+
+def read_neighbour_file() -> np.ndarray:
     try:
         with open(POLYMESH + '/neighbour') as f:
             file = f.read()
@@ -102,8 +106,8 @@ def read_neighbour_file()  -> np.ndarray:
             nNeighbour = int(file[0])
             neighbour = np.empty(nNeighbour, dtype=int)
 
-            for i in range(1,len(file),1):
-                neighbour[i-1] = file[i]
+            for i in range(1, len(file), 1):
+                neighbour[i - 1] = file[i]
 
     except FileNotFoundError:
         print(f"Error: {POLYMESH}/neighbour not found!")
@@ -111,6 +115,7 @@ def read_neighbour_file()  -> np.ndarray:
         print(f"An error occured: {e}")
 
     return neighbour
+
 
 def read_boundary_File() -> dict:
     try:
@@ -134,10 +139,10 @@ def read_boundary_File() -> dict:
             for i in range(nPatches):
                 patchDictList = patchDicts[i].split()
                 patchData = dict()
-                for j in range(0,len(patchDictList),2):
+                for j in range(0, len(patchDictList), 2):
                     patchData.update(
-                            {patchDictList[j]: convert_to_int(patchDictList[j+1])}
-                        )
+                        {patchDictList[j]: convert_to_int(patchDictList[j + 1])}
+                    )
 
                 boundary[file[i]] = patchData
     except FileNotFoundError:
@@ -146,6 +151,7 @@ def read_boundary_File() -> dict:
         print(f"An error occured: {e}")
 
     return boundary
+
 
 def read_controlDict_file() -> dict:
     controlDict = dict()
@@ -163,7 +169,7 @@ def read_controlDict_file() -> dict:
                 # Split line using one or more spaces
                 line = re.split(r'\s+', i)
 
-                # Read line only if it has two enties, otherwise something probably
+                # Read line only if it has two entries, otherwise something probably
                 # went wrong
                 if len(line) != 2 or line[0] == '' or line[1] == '':
                     raise TypeError("Something went wrong when parsing controlDict")
@@ -176,13 +182,15 @@ def read_controlDict_file() -> dict:
         print(f"An error occured: {e}")
     return controlDict
 
+
 def readBoundaryAndInitialConditions(fileName) -> tuple[str, list, dict]:
     boundaryConditionsDict = dict()
     dataType, initialValue = '', ''
     boundaryConditions = []
+    print(f"Reading field {fileName}\n")
 
     try:
-        with (open(ZERO+ '/' + fileName) as f):
+        with (open(ZERO + '/' + fileName) as f):
 
             file = f.read()
             file = remove_cpp_comments(file)
@@ -214,11 +222,12 @@ def readBoundaryAndInitialConditions(fileName) -> tuple[str, list, dict]:
             for i in range(len(patchNames)):
                 patchDict = patchDicts[i].split()
 
-                if(patchDict[1] == 'empty'):
+                if (patchDict[1] == 'empty'):
                     boundaryConditionsDict.update({patchNames[i]: {"type": patchDict[1]}})
                 else:
                     boundaryConditionsDict.update({patchNames[i]: \
-                                                       {"type": patchDict[1], patchDict[2]: {patchDict[3]: patchDict[4]} }})
+                                                       {"type": patchDict[1],
+                                                        patchDict[2]: {patchDict[3]: patchDict[4]}}})
     except FileNotFoundError:
         print(f"Error: {ZERO}/{fileName} not found!")
     except Exception as e:
@@ -227,23 +236,59 @@ def readBoundaryAndInitialConditions(fileName) -> tuple[str, list, dict]:
     # Clean dataType from brackets and put dimensions in list
     dataType = dataType.split()[1:]
     for index, element in enumerate(dataType):
-        dataType[index]= re.sub(r'\D', '', element)
+        dataType[index] = re.sub(r'\D', '', element)
 
     return initialValue, dataType, boundaryConditionsDict
 
-#https://stackoverflow.com/questions/241327/remove-c-and-c-comments-using-python
+
+def readTransportProperties(name) -> tuple[float, list]:
+    print(f"Reading diffusivity {name} in transportProperties dict\n")
+
+    try:
+        with (open(CONSTANT + 'transportProperties') as f):
+
+            file = f.read()
+            file = remove_cpp_comments(file)
+            file = remove_foamFile_dict(file)
+            file = re.sub(r';', '', file)
+            file = [line for line in file.splitlines() if line.strip()]
+
+            for line in file:
+                # Split line using one or more spaces
+                line = re.split(r'\s+', line)
+                gamma = convert_to_float(line[-1], True)
+
+            # Clean dataType from brackets and put dimensions in list
+            dataType = line[2:-1]
+            for index, element in enumerate(dataType):
+                dataType[index] = re.sub(r'\D', '', element)
+
+            # Remove empty strings from list
+            dataType = list(filter(None, dataType))
+
+    except FileNotFoundError:
+        print(f"Error: {CONSTANT}/transportProperties' not found!")
+    except Exception as e:
+        print(f"An error occured: {e}")
+
+    return dataType, gamma
+
+
+# https://stackoverflow.com/questions/241327/remove-c-and-c-comments-using-python
 def remove_cpp_comments(text):
     def replacer(match):
         s = match.group(0)
         if s.startswith('/'):
-            return " " # note: a space and not an empty string
+            return " "  # note: a space and not an empty string
         else:
             return s
+
     pattern = re.compile(
         r'//.*?$|/\*.*?\*/|\'(?:\\.|[^\\\'])*\'|"(?:\\.|[^\\"])*"',
         re.DOTALL | re.MULTILINE
     )
     return re.sub(pattern, replacer, text)
+
 
 def remove_foamFile_dict(text):
     # Remove FoamFile string
@@ -251,6 +296,7 @@ def remove_foamFile_dict(text):
     # Remove everything inside curly brackets after FoamFile string
     text = re.sub(r'{[^}]*}*', '', text, 1)
     return text
+
 
 def convert_to_int(string, check=False):
     if (check):
@@ -265,14 +311,22 @@ def convert_to_int(string, check=False):
         return string
 
 
+def isFloat(value):
+    try:
+        float(value)
+        return True
+    except ValueError:
+        return False
+
+
 def convert_to_float(string, check=False):
     if (check):
-        if np.char.isdigit(string):
+        if isFloat(string):
             return float(string)
         else:
             raise ValueError("Float digit expected")
 
-    if np.char.isdigit(string):
+    if isFloat(string):
         return float(string)
     else:
         return string

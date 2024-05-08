@@ -24,13 +24,13 @@ boundaryField
     bottom
     {
         type            fixedValue;
-        value	        uniform 0;
+        value	        uniform 1;
     }
 
     top
     {
         type            fixedValue;
-        value	        uniform 0;
+        value	        uniform 1;
     }
 
     left
@@ -42,7 +42,7 @@ boundaryField
     right
     {
         type            fixedValue;
-        value	        uniform 1;
+        value	        uniform 0;
     }
 
     frontAndBackPlanes

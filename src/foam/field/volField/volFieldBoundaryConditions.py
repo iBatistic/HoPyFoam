@@ -13,13 +13,35 @@ import numpy as np
 
 class volFieldBoundaryConditions():
 
-    class updatePatchCoeffs:
+    class LREcoeffs:
 
-        def fixedValue(mesh, patchName, patchValue, boundaryValues):
-            print(f"-> updatePatchCoeffs, fixed value: {patchValue}, on {patchName} patch")
-            pass
+        def fixedValue(w_diag, Q):
+            w_diag[-1] = 1.0
+            Q[0][-1] = 1.0
 
         def empty(self, patchName, patchValue, boundaryValues):
-            print(f"-> updatePatchCoeffs, empty patch on {patchName}")
+            pass
 
 
+    class evaluate:
+
+        def fixedValue(mesh, patchName, patchValue, boundaryValues, dimensions):
+            print(f"Initialise patch values for {patchName},  fixed value: {patchValue}")
+
+            boundary = mesh._boundary
+            nInternalFaces = mesh.nInternalFaces()
+
+            for patch in boundary:
+                if patch == patchName:
+                    startFace = boundary[patch]['startFace']
+                    nFaces = boundary[patch]['nFaces']
+
+                    for faceI in range(nFaces):
+                        bIndex = startFace + faceI - nInternalFaces
+                        for cmpt in range(dimensions):
+                            boundaryValues[cmpt][bIndex] = patchValue#[cmpt]
+
+
+        def empty(self, patchName, patchValue, boundaryValues, dimensions):
+            print(f"Skiping initialisation for empty patch {patchName}")
+            pass

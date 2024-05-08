@@ -25,7 +25,7 @@ BANNER = '''\
 |     | . |   __| | |   __|  |  |     | | | |   |  Code Version: 0.0\n\
 |__|__|___|__|  |_  |__|  |_____|__|__|_|_|_|   |  License: GPLv3\n\
                 |___|\n\
-    '''
+'''
 
 def arg_parser() -> argparse.ArgumentParser:
     """ Parse arguments using argparse module"""
@@ -57,6 +57,8 @@ def arg_parser() -> argparse.ArgumentParser:
 
     return parser
 
+def HoPyBanner() -> str:
+    return BANNER
 
 def print_job_info() -> None:
     jobInfo = namedtuple('jobInfo', 'exec date time pid case')

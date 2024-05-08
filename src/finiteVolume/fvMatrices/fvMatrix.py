@@ -10,8 +10,21 @@ Description
 __author__ = 'Ivan Batistić & Philip Cardiff'
 __email__ = 'ibatistic@fsb.hr, philip.cardiff@ucd.ie'
 
+import numpy as np
 
-class Laplacian():
+class fvMatrix():
 
-    def __init__(self):
-        pass
+    def __init__(self, psi, source, A):
+        self._A = A
+        self._source = source
+        self._psi = psi
+
+    @classmethod
+    def construct(self, psi, operator, gamma):
+
+        source, A = self.defineMatrix(psi, operator, gamma)
+
+        return self(psi, source, A)
+
+    def solve(self):
+        self._psi._cellValues = np.linalg.solve(self._A, self._source)

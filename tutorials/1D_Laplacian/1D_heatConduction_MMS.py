@@ -20,14 +20,14 @@ Ta = 0
 Tb = 0
 
 # Number of control volumes
-N = int(11)
+N = int(16)
 
 # Number of terms in Taylor expansion
-Np = 10
+Np = 4
 
 # Number of face west and east neighbours
-Nn_west = 5
-Nn_east = 5
+Nn_west = 4
+Nn_east = 4
 
 '''
 --------------------------------------------------------------------------------
@@ -146,7 +146,7 @@ if (Np > Nn):
 # Coefficient for each face interpolation molecule
 cx = [[] for x in range(N + 1)]
 
-# Loop over all interior faces
+# Loop over all faces
 for facei in range(0, len(xf)):
     print(f'\033[1m\nConstructing weights for face {facei}\033[0m')
 
@@ -162,8 +162,7 @@ for facei in range(0, len(xf)):
     for i in range(NnCells):
         # Loop over elements in truncated Taylor series and add their value
         for n in range(Np):
-            Q[n, i] = pow((xc[faceCellNei[facei][i]] - xf[facei]), n) \
-                      * np.math.factorial(n)
+            Q[n, i] = pow((xc[faceCellNei[facei][i]] - xf[facei]), n) / np.math.factorial(n)
 
     # Loop over neighbours Nn and construct matrix W (diagonal matrix)
     w_diag = np.zeros(Nn)

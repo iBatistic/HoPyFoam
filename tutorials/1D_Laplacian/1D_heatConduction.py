@@ -53,8 +53,8 @@ xc = np.linspace((0+dx/2), (L-dx/2), N)
 '''
 
 # Construct interpolation stencil for each face
-Nn_west = 3
-Nn_east = 3
+Nn_west = 1
+Nn_east = 1
 
 faceCellNei = [[] for x in range(N + 1)]
 
@@ -126,7 +126,7 @@ def weight(dist) -> float:
 '''
 
 # Number of terms in Taylor expansion
-Np = 4
+Np = 2
 
 # Coefficient for each face interpolation molecule
 cx = [[] for x in range(N + 1)]
