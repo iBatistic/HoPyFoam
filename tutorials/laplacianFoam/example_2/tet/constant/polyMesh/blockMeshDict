@@ -17,56 +17,77 @@ FoamFile
 
 // start of blockMeshDict
 
-convertToMeters 1;
+scale 1;
 
 vertices
 (
-    (0 0 0) //0
-    (5 0 0) //1
-    (5 5 0) //2
-    (0 5 0) //3
-    (0 0 1) //4
-    (5 0 1) //5
-    (5 5 1) //6
-    (0 5 1) //7
+    (0 0 -0.05) //0
+    (1 0 -0.05) //1
+    (1 1 -0.05) //2
+    (0 1 -0.05) //3
+    (0 0 0.05) //4
+    (1 0 0.05) //5
+    (1 1 0.05) //6
+    (0 1 0.05) //7
 );
 
 blocks
 (
-    hex (0 1 2 3 4 5 6 7) (5 5 1) simpleGrading (1 1 1)
+    hex (0 1 2 3 4 5 6 7) (9 9 1) simpleGrading (1 1 1)
 );
 
 edges
 (
 );
 
-patches
+boundary
 (
-    patch left
-    (
-        (0 3 7 4)
-    )
-    
-    patch right
-    (
-        (1 5 6 2)
-    )
+    left
+    {
+        type patch;
+        faces
+        (
+            (0 3 7 4)
+        );
+    }
 
-    empty frontAndBackPlanes
-    (
-        (0 1 2 3)
-        (7 6 5 4)
-    )
 
-    patch bottom
-    (
-        (0 4 5 1)
-    )
+    top
+    {
+        type patch;
+        faces
+        (
+            (7 3 2 6)
+        );
+    }
 
-    patch top
-    (
-        (7 3 2 6)
-    )
+    right
+    {
+        type patch;
+        faces
+        (
+            (1 5 6 2)
+        );
+    }
+
+    bottom
+    {
+        type patch;
+        faces
+        (
+            (0 4 5 1)
+        );
+    }
+
+    frontAndBackPlanes
+    {
+        type empty;
+        faces
+        (
+            (0 1 2 3)
+            (7 6 5 4)
+        );
+    }
 );
 
 mergePatchPairs

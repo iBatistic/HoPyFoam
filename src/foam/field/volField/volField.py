@@ -75,13 +75,13 @@ class volField(field, volFieldBoundaryConditions):
             if(patchType != 'empty'):
                 patchValue = boundaryConditionsDict[patchName]['value']['uniform']
 
-            evaluate = eval("self.evaluate." + patchType)
+            evaluate = eval("volFieldBoundaryConditions.evaluate." + patchType)
 
             evaluate(mesh, patchName, patchValue, boundaryValues, dimensions)
 
         return boundaryValues
 
-    #TO_DO make it as class method
+    #TO_DO make it as class method. This is brute force approach. Should be done more efficiently!
     def makeFacesInterpolationMolecule(self) -> list[int]:
         print(f"Calculating interpolation stencil for field {self._fieldName}")
 

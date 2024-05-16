@@ -7,6 +7,9 @@
 Description
     Volume field boundary conditions
 """
+__author__ = 'Ivan Batistić'
+__email__ = 'ibatistic@fsb.unizg.hr'
+__all__ = ['volFieldBoundaryConditions']
 
 import re
 import numpy as np
@@ -19,15 +22,16 @@ class volFieldBoundaryConditions():
             w_diag[-1] = 1.0
             Q[0][-1] = 1.0
 
-        def empty(self, patchName, patchValue, boundaryValues):
+        def analyticalFixedValue(w_diag, Q):
+            volFieldBoundaryConditions.LREcoeffs.fixedValue(w_diag, Q)
+
+        def empty(patchName, patchValue, boundaryValues):
             pass
 
 
     class evaluate:
 
         def fixedValue(mesh, patchName, patchValue, boundaryValues, dimensions):
-            print(f"Initialise patch values for {patchName},  fixed value: {patchValue}")
-
             boundary = mesh._boundary
             nInternalFaces = mesh.nInternalFaces()
 
@@ -41,7 +45,8 @@ class volFieldBoundaryConditions():
                         for cmpt in range(dimensions):
                             boundaryValues[cmpt][bIndex] = patchValue#[cmpt]
 
+        def analyticalFixedValue(mesh, patchName, patchValue, boundaryValues, dimensions):
+            volFieldBoundaryConditions.evaluate.fixedValue(mesh, patchName, patchValue, boundaryValues, dimensions)
 
-        def empty(self, patchName, patchValue, boundaryValues, dimensions):
-            print(f"Skiping initialisation for empty patch {patchName}")
+        def empty(mesh, patchName, patchValue, boundaryValues, dimensions):
             pass

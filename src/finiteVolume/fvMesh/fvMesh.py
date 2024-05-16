@@ -25,7 +25,7 @@ class polyMesh:
         self._points = foamFileParser.read_points_file()
         self.__faces = foamFileParser.read_faces_file()
         self._owner = foamFileParser.read_owner_file()
-        self._neigbour = foamFileParser.read_neighbour_file()
+        self._neighbour = foamFileParser.read_neighbour_file()
         self._boundary = foamFileParser.read_boundary_File()
 
 class fvMesh(polyMesh):
@@ -85,6 +85,12 @@ class fvMesh(polyMesh):
             if(faceI >= startFace and faceI < nFaces+startFace):
                 return patch
 
+    def twoD(self) -> bool:
+        for patch in self._boundary:
+            if self._boundary[patch]['type'] == 'empty':
+                return True
+        return False
+
     def Cf(self) -> np.ndarray:
         return self._Cf
 
@@ -92,7 +98,7 @@ class fvMesh(polyMesh):
         return self.nb_faces()-self.boundaryFaceNb()
 
     def boundaryFaceNb(self) -> int:
-        return np.size(self._owner, axis=0) - np.size(self._neigbour, axis=0)
+        return np.size(self._owner, axis=0) - np.size(self._neighbour, axis=0)
 
     # Number of control volumes
     def nCells(self) -> int:
@@ -144,9 +150,9 @@ class fvMesh(polyMesh):
             Cestimated[self._owner[facei]] += self._Cf[facei]
             nCellFaces[self._owner[facei]] += 1
 
-        for facei in range(self. _neigbour.size):
-            Cestimated[self._neigbour[facei]] += self._Cf[facei]
-            nCellFaces[self._neigbour[facei]] += 1
+        for facei in range(self. _neighbour.size):
+            Cestimated[self._neighbour[facei]] += self._Cf[facei]
+            nCellFaces[self._neighbour[facei]] += 1
 
         for celli in range(np.size(Cestimated, axis=0)):
             Cestimated[celli] /= nCellFaces[celli]
@@ -191,7 +197,7 @@ class fvMesh(polyMesh):
                     C[self._owner[facei]] += tetVolume * tet.centre()
                     V[self._owner[facei]] += tetVolume
 
-        for facei in range(self._neigbour.size):
+        for facei in range(self._neighbour.size):
             f = self.__faces[facei]
 
             # Triangular face, no decomposition
@@ -200,14 +206,14 @@ class fvMesh(polyMesh):
                     [f.points()[0]],
                     [f.points()[1]],
                     [f.points()[2]],
-                    [Cestimated[self._neigbour[facei]]]]
+                    [Cestimated[self._neighbour[facei]]]]
                 )
 
                 tet = tetrahedron(tetPoints)
 
                 tetVolume = tet.mag()
-                C[self._neigbour[facei]] += tetVolume * tet.centre()
-                V[self._neigbour[facei]] += tetVolume
+                C[self._neighbour[facei]] += tetVolume * tet.centre()
+                V[self._neighbour[facei]] += tetVolume
 
             # Polygonal face
             else:
@@ -218,14 +224,14 @@ class fvMesh(polyMesh):
                         [f.points()[pointi]],
                         [f.next_point(pointi)],
                         [faceCentre],
-                        [Cestimated[self._neigbour[facei]]]])
+                        [Cestimated[self._neighbour[facei]]]])
 
 
                     tet = tetrahedron(tetPoints)
 
                     tetVolume = tet.mag()
-                    C[self._neigbour[facei]] += tetVolume * tet.centre()
-                    V[self._neigbour[facei]] += tetVolume
+                    C[self._neighbour[facei]] += tetVolume * tet.centre()
+                    V[self._neighbour[facei]] += tetVolume
 
 
         C /= V[:, np.newaxis]

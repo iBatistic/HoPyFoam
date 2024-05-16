@@ -5,21 +5,19 @@
 |__|__|___|__|  |_  |__|  |_____|__|__|_|_|_|   |  License: GPLv3
                 |___|
 Description
-    Field class as base clas for volume and surface field
+    Base clas for volume and surface field
 """
-
-import re
-import numpy as np
+__author__ = 'Ivan Batistić'
+__email__ = 'ibatistic@fsb.unizg.hr'
+__all__ = ['field']
 
 class field():
-
-    _fieldName = "None"
 
     def __init__(self, fieldName="None"):
         self._fieldName = fieldName
 
-    # foamFile banner
-    def foamFile(self, fieldType, fieldName, timeValue):
+    # foamFile banner. Used when writing fields in OF format.
+    def foamFileDict(self, fieldType, fieldName, timeValue) -> str:
         banner = 'FoamFile\n{\n    version     2.0;\n    format      ascii;\n'
         banner += '    class       ' + fieldType + ';\n'
         banner += '    location    "' + str(timeValue) + '";\n'

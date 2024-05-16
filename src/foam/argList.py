@@ -44,7 +44,7 @@ def arg_parser() -> argparse.ArgumentParser:
                         action='store_true',
                         help='Enable debug mode')
 
-    # Mutually exlusive arguments
+    # Mutually exclusive arguments
     group = parser.add_mutually_exclusive_group()
     group.add_argument('-v', '--verbose', action='store_true')
     group.add_argument('-q', '--quiet', action='store_true')
@@ -56,9 +56,6 @@ def arg_parser() -> argparse.ArgumentParser:
     print_job_info()
 
     return parser
-
-def HoPyBanner() -> str:
-    return BANNER
 
 def print_job_info() -> None:
     jobInfo = namedtuple('jobInfo', 'exec date time pid case')

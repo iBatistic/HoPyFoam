@@ -9,8 +9,8 @@ Description
 """
 __author__ = 'Ivan Batistić & Philip Cardiff'
 __email__ = 'ibatistic@fsb.hr, philip.cardiff@ucd.ie'
+__all__ = ['LaplacianOperator']
 
-import numpy as np
 import os
 from src.foam.foamFileParser import *
 
@@ -19,18 +19,20 @@ class LaplacianOperator():
     @classmethod
     def Laplacian(self, psi, gamma):
 
+        print('Assembling system of equations for Laplacian operator\n')
+
         mesh = psi._mesh
         nCells = mesh.nCells()
         nFaces = mesh.nFaces()
         nInternalFaces = mesh.nInternalFaces()
         dimensions = psi._dimensions
 
-        source = np.zeros([nCells, dimensions], dtype = float)
+        source = np.zeros([nCells, dimensions], dtype=float)
 
-        A = np.zeros([nCells, nCells], dtype = float)
+        A = np.zeros([nCells, nCells], dtype=float)
 
         owner = mesh._owner
-        neighbour = mesh._neigbour
+        neighbour = mesh._neighbour
 
         GaussPointsAndWeights = psi._facesGaussPointsAndWeights
 
@@ -61,24 +63,27 @@ class LaplacianOperator():
 
                     # Loop over Gauss point interpolation stencil and add
                     # stencil cells contribution to matrix
-                    for i, cellIndex in enumerate(faceStencil):
+                    for j, cellIndex in enumerate(faceStencil):
 
                         # Internal face treatment
-                        if(faceI < nInternalFaces):
+                        if (faceI < nInternalFaces):
                             # Owner and neighbour of current face
                             cellP = owner[faceI]
                             cellN = neighbour[faceI]
 
                             # Store Laplace coefficients
-                            A[cellP][cellIndex] += gammaMagSf * gpW * (cx[i] @ nf)
-                            A[cellN][cellIndex] += - gammaMagSf * gpW * (cx[i] @ nf)
+                            A[cellP][cellIndex] += gammaMagSf * gpW * (cx[j] @ nf)
+                            A[cellN][cellIndex] += - gammaMagSf * gpW * (cx[j] @ nf)
 
                         else:
                             # Boundary face treatment
                             cellP = owner[faceI]
-                            A[cellP][cellIndex] += gammaMagSf * gpW * (cx[i] @ nf)
+                            # Ovo ne moze tu bit za zeroGradient!!!!
+                            # Napraviti kako je u foamu, ic po patchevima i onda za svaki patch
+                            # Dodat kontribuciju.
+                            A[cellP][cellIndex] += gammaMagSf * gpW * (cx[j] @ nf)
 
-                            if(i == len(faceStencil)-1):
+                            if (j == len(faceStencil) - 1):
                                 # Boundary face centre is not included in face stencil list
                                 # Its contribution is added last, after cell centres
 
@@ -87,8 +92,8 @@ class LaplacianOperator():
                                 addSourceContribution = eval("self." + patchType)
 
                                 # This can be done in more elegant manner
-                                addSourceContribution(self, psi, patchName, source, cellP, gammaMagSf, nf, gpW, cx[i+1])
-
+                                addSourceContribution(self, gp, faceI, psi, patchName, source, cellP, gammaMagSf, nf, gpW,
+                                                      cx[j + 1])
 
                         # Face have same contribution for cellP and cellN
                         # print(f'face owner: {cellP}')
@@ -100,10 +105,10 @@ class LaplacianOperator():
                         # print(f'stencil neigbour: {cellIndex}')
 
         # File to write data for debug
-        fileName = "LaplacianMatrix.txt"
+        fileName = "LaplacianMatrix.debug.txt"
 
         # Remove old file
-        if (os.path.exists(fileName)):
+        if os.path.exists(fileName):
             os.remove(fileName)
 
         # Write matrix and solution vector
@@ -113,10 +118,31 @@ class LaplacianOperator():
 
         return source, A
 
-    def fixedValue(self, psi, patchName, source, cellP, gammaMagSf, nf, gpW, cx):
+    def fixedValue(self, gp, faceI, psi, patchName, source, cellP, gammaMagSf, nf, gpW, cx):
 
         value = convert_to_float(psi._boundaryConditionsDict[patchName]['value']['uniform'])
         source[cellP][0] += -gammaMagSf * gpW * (cx @ nf) * value
 
-    def empty(self, psi, patchName, source, cellP, gammaMagSf, nf, gpW, cx):
+    def analyticalFixedValue(self, gp, faceI, psi, patchName, source, cellP, gammaMagSf, nf, gpW, cx):
+
+        # TO_DO ovisno o gausovoj tocki promjenit iznos!
+
+        # I do like CFD, page 222, equation b
+        # value depends on Gauss point location
+        faceCentre = psi._mesh.Cf()[faceI]
+        x = gp[0]#faceCentre[0]
+        y = gp[1]#faceCentre[1]
+        #x = faceCentre[0]
+        #y = faceCentre[1]
+        # print(f'x: {x}, y: {y}')
+        #value = x * x - y * y
+        # value = 2.0*y / (pow((1+x),2)+pow(y,2))
+        value = np.sin(1*y) * np.exp(1*x)
+
+        source[cellP][0] += -gammaMagSf * gpW * (cx @ nf) * value
+
+    def empty(self, gp, faceI, psi, patchName, source, cellP, gammaMagSf, nf, gpW, cx):
+        pass
+
+    def zeroGradient(self, gp, faceI, psi, patchName, source, cellP, gammaMagSf, nf, gpW, cx):
         pass

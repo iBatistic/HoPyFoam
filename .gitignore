@@ -3,7 +3,8 @@ test/
 doc/
 *.wip
 
-LRE_coeffs.txt
+# Debug files are stored with this extension
+*.debug.txt
 
 # Pictures
 *.png
@@ -27,6 +28,9 @@ __pycache__/
 
 # C extensions
 *.so
+
+# Editor extensions
+*.swp
 
 # Distribution / packaging
 .Python

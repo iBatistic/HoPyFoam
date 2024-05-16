@@ -34,7 +34,7 @@ def timed(fn):
         #      .format(self.__class__.__name__, fn.__name__, elapsed))
 
         # Write to file instead to console
-        fileName = "timed.txt"
+        fileName = "timed.debug.txt"
         if os.path.exists(fileName):
             file = open(fileName, "a")
         else:
