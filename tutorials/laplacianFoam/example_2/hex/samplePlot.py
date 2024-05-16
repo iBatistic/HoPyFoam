@@ -1,13 +1,17 @@
+"""
+ _____     _____     _____ _____ _____ _____    |  High-order Python FOAM
+|  |  |___|  _  |_ _|   __|     |  _  |     |   |  Python Version: 3.10
+|     | . |   __| | |   __|  |  |     | | | |   |  Code Version: 0.0
+|__|__|___|__|  |_  |__|  |_____|__|__|_|_|_|   |  License: GPLv3
+                |___|
+"""
+
 import numpy as np
 import matplotlib.pyplot as plt
-import random
 
-# Plotting the plot
 fig=plt.figure(figsize=(5,8))
 
 fileName = 'postProcessing/sample/1.0/line_T.xy'
-# or (in case of triangular mesh)
-#fileName = 'postProcessing/sample/1.0/line_T.xy'
 
 x_values = []
 T_values = []
@@ -22,9 +26,9 @@ with open(fileName, 'r') as file:
         T_values.append(float(parts[1]))
 
 for i,x in enumerate(x_values_analytical ):
-    T_values_analytical.append(x*x - 0.5*0.5)
+    #T_values_analytical.append(x*x - 0.5*0.5)
     #T_values_analytical.append(2.0*0.5 / (pow((1+x),2)+pow(0.5,2)))
-    #T_values_analytical.append(np.sin(1*0.5) * np.exp(1*x))
+    T_values_analytical.append(np.sin(5*0.5) * np.exp(5*x))
 
 plt.rc('text', usetex=True)
 plt.rc('font', family='serif')

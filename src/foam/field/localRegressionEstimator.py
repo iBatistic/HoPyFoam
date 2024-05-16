@@ -11,8 +11,6 @@ __author__ = 'Ivan Batistić'
 __email__ = 'ibatistic@fsb.unizg.hr'
 __all__ = ['localRegressionEstimator']
 
-
-import re
 import numpy as np
 import os
 import sys
@@ -21,7 +19,8 @@ from src.foam.decorators import timed
 
 class localRegressionEstimator():
 
-    # Shape parameter of the kernel (constant)
+    # Shape parameter of the kernel
+    # Value of this constant is taken from Castrillo et al. paper
     _k = 6
 
     def __init__(self, volField, mesh):
@@ -39,9 +38,9 @@ class localRegressionEstimator():
     # Return coeffs vector cx for each Gauss points
     def makeCoeffsVector(self):
 
-        coeffs = [[[] for i in range (self._volField._GaussPointsNb)] for x in range(self._mesh.nFaces())]
+        coeffs = [[[] for i in range (self._volField._GaussPointsNb)] for x in range(self._mesh.nFaces)]
 
-        for faceI in range(self._mesh.nFaces()):
+        for faceI in range(self._mesh.nFaces):
             for point in range(self._volField._GaussPointsNb):
                 for cellN in range(self._volField.Nn):
                     coeffs[faceI][point].append(np.array(\
@@ -73,15 +72,15 @@ class localRegressionEstimator():
         Np = volField.Np
 
         # Coefficient for each face interpolation molecule
-        cx = [[] for x in range(mesh.nFaces())]
-        cy = [[] for x in range(mesh.nFaces())]
-        cz = [[] for x in range(mesh.nFaces())]
+        cx = [[] for x in range(mesh.nFaces)]
+        cy = [[] for x in range(mesh.nFaces)]
+        cz = [[] for x in range(mesh.nFaces)]
 
         # Face Gauss points
         facesGaussPoints = [sublist[1] for sublist in volField._facesGaussPointsAndWeights]
 
         # Loop over Gauss points of interior faces
-        for faceI in range(mesh.nFaces()):
+        for faceI in range(mesh.nFaces):
 
             # Loop over face Gauss points
             for gpI in facesGaussPoints[faceI]:
@@ -94,7 +93,7 @@ class localRegressionEstimator():
                 # (n-th column of Q is q(xn-x))
                 for i in range(Nn[faceI]):
                     # Neighbour cell centre
-                    neiC = mesh.C()[molecules[faceI][i]]
+                    neiC = mesh.C[molecules[faceI][i]]
 
                     # Taylor series terms calculated using nested for loops
                     N = volField.N;
@@ -108,18 +107,18 @@ class localRegressionEstimator():
                # Loop over neighbours Nn and find max distance
                 rs = 0.0
                 for i in range(Nn[faceI]):
-                    neiC = mesh.C()[molecules[faceI][i]]
+                    neiC = mesh.C[molecules[faceI][i]]
                     rsNew = max(rs, np.linalg.norm(gpI - neiC))
                     rs = rsNew
 
                 # Loop over neighbours Nn and construct matrix W (diagonal matrix)
                 w_diag = np.zeros(volField.Nn)
                 for i in range(Nn[faceI]):
-                    neiC = mesh.C()[molecules[faceI][i]]
+                    neiC = mesh.C[molecules[faceI][i]]
                     dist = np.linalg.norm(neiC - gpI)
                     w_diag[i] = self.weight(abs(dist), rs)
 
-                if(faceI >= mesh.nInternalFaces()):
+                if(faceI >= mesh.nInternalFaces):
                     facePatchType = mesh.facePatchType(faceI, self._volField)
 
                     if(facePatchType == 'empty'):
@@ -144,7 +143,7 @@ class localRegressionEstimator():
                 M = Q @ W @ Q.T
 
                 if (M.shape[0] != M.shape[1] | M.shape[0] == Np):
-                    raise ValueError("Matrix M should be Np x Np shape")
+                    raise ValueError("Matrix M should be Np x Np shape. Something went wrong!")
 
                 # Calculate matrix A = M^-1*Q*W
                 # Depending on condition number choose pinv or inv

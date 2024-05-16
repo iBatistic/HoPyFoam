@@ -9,6 +9,9 @@ doc/
 # Pictures
 *.png
 
+#Paraview extension
+*.foam
+
 # OpenFOAM mesh files
 faces
 boundary

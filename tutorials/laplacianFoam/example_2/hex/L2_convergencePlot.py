@@ -1,3 +1,11 @@
+"""
+ _____     _____     _____ _____ _____ _____    |  High-order Python FOAM
+|  |  |___|  _  |_ _|   __|     |  _  |     |   |  Python Version: 3.10
+|     | . |   __| | |   __|  |  |     | | | |   |  Code Version: 0.0
+|__|__|___|__|  |_  |__|  |_____|__|__|_|_|_|   |  License: GPLv3
+                |___|
+"""
+
 import numpy as np
 import matplotlib.pyplot as plt
 import random
@@ -15,8 +23,12 @@ mesh_size = [25, 100, 400, 1600]
 # T = sin(y) * e^x
 L_2_p1 = [2.1238e-03, 6.2617e-04,  1.6489e-04, 4.1907e-05]
 L_2_p2 = [3.5703e-04, 4.8823e-05,  9.0460e-06, 2.0094e-06]
+L_2_p2_16 = [1.3211e-03, 1.3754e-04,  1.7327e-05, 2.4986e-06]
+
 #L_2_p3 = [1.0936e-04, 2.1644e-05,  3.8300e-06, 5.5835e-07]
-L_2_p3 = [5.6958e-05, 3.9375e-06,  3.0030e-07, 2.0880e-08]
+L_2_p3_14 = [5.6958e-05, 3.9375e-06,  3.0030e-07, 2.0880e-08]
+L_2_p3_20 = [1.3525e-04, 4.8096e-06,  2.1177e-07, 1.0745e-08] # Nn = 20
+
 
 def order(np, order, offset):
     result = []
@@ -25,7 +37,7 @@ def order(np, order, offset):
     return result
 
 L_2_i1 = order(mesh_size, 1, 0.05)
-L_2_i2 = order(mesh_size, 2, 0.100)
+L_2_i2 = order(mesh_size, 2, 0.700)
 L_2_i3 = order(mesh_size, 3, 2)
 
 plt.rc('text', usetex=True)
@@ -36,8 +48,9 @@ plt.rc('ytick',labelsize=12)
 plt.yscale('log')
 plt.xscale('log')
 plt.plot(mesh_size, L_2_p1, color='blue',linestyle='solid', linewidth=3, alpha=0.8,marker='o', markersize=8, markerfacecolor='none', zorder=6, label='second order')
-plt.plot(mesh_size, L_2_p2, color='red',linestyle='solid', linewidth=3, alpha=0.8,marker='o', markersize=8, markerfacecolor='none', zorder=6, label='third order')
-plt.plot(mesh_size, L_2_p3, color='orange',linestyle='solid', linewidth=3, alpha=0.8,marker='o', markersize=8, markerfacecolor='none', zorder=6, label='fourth order')
+plt.plot(mesh_size, L_2_p2_16, color='red',linestyle='solid', linewidth=3, alpha=0.8,marker='o', markersize=8, markerfacecolor='none', zorder=6, label='third order')
+#plt.plot(mesh_size, L_2_p3_14, color='orange',linestyle='solid', linewidth=3, alpha=0.8,marker='o', markersize=8, markerfacecolor='none', zorder=6, label='fourth order, Nn=14')
+plt.plot(mesh_size, L_2_p3_20, color='orange',linestyle='solid', linewidth=3, alpha=0.8,marker='o', markersize=8, markerfacecolor='none', zorder=6, label='fourth order')#, Nn=20
 
 plt.plot( mesh_size, L_2_i1, '--', color = "blue", linewidth = 1, label='second order slope')
 plt.plot( mesh_size, L_2_i2, '--', color = 'red', linewidth = 1, label='third order slope')

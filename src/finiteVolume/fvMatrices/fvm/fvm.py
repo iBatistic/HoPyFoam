@@ -19,12 +19,8 @@ class fvm(fvMatrix):
     @classmethod
     def defineMatrix(self, psi, operator, gamma):
 
-        #source, lower, diag, upper = LaplaceOperator.Laplacian(psi, gamma)
-        # return source, lower, diag, upper
-
-        # TO_DO
-        # Check for operator type...
         gammaDimensions, gammaValue = readTransportProperties(gamma)
 
         source, A = LaplacianOperator.Laplacian(psi, gammaValue)
+
         return source, A

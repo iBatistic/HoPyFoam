@@ -25,7 +25,10 @@ class volFieldBoundaryConditions():
         def analyticalFixedValue(w_diag, Q):
             volFieldBoundaryConditions.LREcoeffs.fixedValue(w_diag, Q)
 
-        def empty(patchName, patchValue, boundaryValues):
+        def empty(w_diag, Q):
+            pass
+
+        def zeroGradient(w_diag, Q):
             pass
 
 
@@ -33,7 +36,7 @@ class volFieldBoundaryConditions():
 
         def fixedValue(mesh, patchName, patchValue, boundaryValues, dimensions):
             boundary = mesh._boundary
-            nInternalFaces = mesh.nInternalFaces()
+            nInternalFaces = mesh.nInternalFaces
 
             for patch in boundary:
                 if patch == patchName:
@@ -49,4 +52,7 @@ class volFieldBoundaryConditions():
             volFieldBoundaryConditions.evaluate.fixedValue(mesh, patchName, patchValue, boundaryValues, dimensions)
 
         def empty(mesh, patchName, patchValue, boundaryValues, dimensions):
+            pass
+
+        def zeroGradient(mesh, patchName, patchValue, boundaryValues, dimensions):
             pass

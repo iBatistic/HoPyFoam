@@ -34,10 +34,10 @@ class volScalarField(volField):
         # Number of terms in Taylor expansion
         # Example: Second order (quadratic interpolation) has 6 terms in 2D case
         # Example: First order (linear interpolation) has 3 terms in 2D case
-        self. _Np  = self.TaylorTermsNumber(self._N, mesh.twoD())
+        self. _Np  = self.TaylorTermsNumber(self._N, mesh.twoD)
 
         # Number of cells in interpolation stencil
-        self._Nn = 14
+        self._Nn = 16
 
         # A quick check for stencil size requirement
         if (self._Np >= self._Nn):
@@ -48,9 +48,10 @@ class volScalarField(volField):
         super().__init__(fieldName, mesh, boundaryAndInitialConditions)
 
 
-    # Returns number of terms in Taylor expression
+    # Returns number of terms in Taylor expression, hard-coded
     @classmethod
     def TaylorTermsNumber(self, N, twoD) -> int:
+
         if (twoD):
             if (N == 1):
                 return 3
@@ -74,7 +75,7 @@ class volScalarField(volField):
     def Nn(self) -> int:
         return self._Nn
 
-    # Interpolation  order
+    # Interpolation  order, polynomial degree
     @property
     def N(self) -> int:
         return self._N
@@ -101,9 +102,9 @@ class volScalarField(volField):
 
             # Write internal field
             file.write("internalField   nonuniform List<scalar>\n")
-            file.write(f"{self._mesh.nCells()}\n")
+            file.write(f"{self._mesh.nCells}\n")
             file.write("(\n")
-            for i in range(self._mesh.nCells()):
+            for i in range(self._mesh.nCells):
                 file.write(f'{self._cellValues[i][0]} \n')
             file.write(")\n")
             file.write(";\n\n")

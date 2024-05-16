@@ -48,7 +48,7 @@ class volField(field, volFieldBoundaryConditions):
     # TO_DO: Only works for scalar because initialValue is parsed as scalar, be careful with this later on!
     @classmethod
     def initCellValues(self, mesh, initialValue, dimensions):
-        nCells = mesh.nCells()
+        nCells = mesh.nCells
         # Initialise cell values to 1 and multiply then with corresponding initialValue
         cellValues = np.ones((dimensions, nCells), dtype=float)
 
@@ -62,7 +62,7 @@ class volField(field, volFieldBoundaryConditions):
     @classmethod
     def initBoundaryValues(self, mesh, boundaryConditionsDict):
         dimensions = self._dimensions
-        boundaryFaceNb = mesh.boundaryFaceNb()
+        boundaryFaceNb = mesh.boundaryFaceNb
 
         # Initialise boundary values
         boundaryValues = \
@@ -81,7 +81,7 @@ class volField(field, volFieldBoundaryConditions):
 
         return boundaryValues
 
-    #TO_DO make it as class method. This is brute force approach. Should be done more efficiently!
+    #This is brute force approach. Should be done more efficiently!
     def makeFacesInterpolationMolecule(self) -> list[int]:
         print(f"Calculating interpolation stencil for field {self._fieldName}")
 
@@ -91,15 +91,15 @@ class volField(field, volFieldBoundaryConditions):
 
         for faceI in range(len(self._mesh._Cf)):
 
-            internalFacesNb = self._mesh.nInternalFaces()
+            internalFacesNb = self._mesh.nInternalFaces
 
             # Construct interpolation molecule for internal and boudnary face
             # Loop over control volumes and take closest Nn neighbours
             distances = []
             faceCf = self._mesh._Cf[faceI]
 
-            for cellI in range(self._mesh.nCells()):
-                distance = np.linalg.norm(self._mesh.C()[cellI] - faceCf)
+            for cellI in range(self._mesh.nCells):
+                distance = np.linalg.norm(self._mesh.C[cellI] - faceCf)
                 distances.append((cellI, distance))
 
             # Sort faces according to distances and take Nn faces in stencil
@@ -141,7 +141,7 @@ class volField(field, volFieldBoundaryConditions):
 
         # Loop over all faces
         for faceI in range(len(mesh._Cf)):
-            face = mesh.faces()[faceI]
+            face = mesh.faces[faceI]
             GaussPoints, weights = face.GaussPointsAndWeights(self._GaussPointsNb, emptyDir)
             facesGaussPointsAndWeights.insert(faceI,[weights, GaussPoints])
 

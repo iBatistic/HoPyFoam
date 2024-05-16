@@ -22,9 +22,9 @@ class LaplacianOperator():
         print('Assembling system of equations for Laplacian operator\n')
 
         mesh = psi._mesh
-        nCells = mesh.nCells()
-        nFaces = mesh.nFaces()
-        nInternalFaces = mesh.nInternalFaces()
+        nCells = mesh.nCells
+        nFaces = mesh.nFaces
+        nInternalFaces = mesh.nInternalFaces
         dimensions = psi._dimensions
 
         source = np.zeros([nCells, dimensions], dtype=float)
@@ -36,73 +36,52 @@ class LaplacianOperator():
 
         GaussPointsAndWeights = psi._facesGaussPointsAndWeights
 
-        # Loop over faces
-        for cmpt in range(dimensions):
-            for faceI in range(nFaces):
+        # Loop over internal faces
+        for faceI in range(nInternalFaces):
 
-                # Diffusivity coefficient multiplied with face magnitude
-                gammaMagSf = mesh.magSf()[faceI] * gamma
+            # Diffusivity coefficient multiplied with face magnitude
+            gammaMagSf = mesh.magSf[faceI] * gamma
 
-                # Face normal
-                nf = mesh.nf()[faceI]
+            # Face normal
+            nf = mesh.nf[faceI]
 
-                # List of face Gauss points [1] and weights [0]
-                faceGaussPointsAndWeights = GaussPointsAndWeights[faceI]
+            # List of face Gauss points [1] and weights [0]
+            faceGaussPointsAndWeights = GaussPointsAndWeights[faceI]
 
-                # Current face points interpolation stencil
-                faceStencil = psi._facesInterpolationMolecule[faceI]
+            # Current face points interpolation stencil
+            faceStencil = psi._facesInterpolationMolecule[faceI]
 
-                # Loop over Gauss points
-                for i, gp in enumerate(faceGaussPointsAndWeights[1]):
+            # Loop over Gauss points
+            for i, gp in enumerate(faceGaussPointsAndWeights[1]):
 
-                    # Gauss point gp weight
-                    gpW = faceGaussPointsAndWeights[0][i]
+                # Gauss point gp weight
+                gpW = faceGaussPointsAndWeights[0][i]
 
-                    # Gauss point interpolation coefficient vector for each neighbouring cell
-                    cx = psi.LRE().coeffs()[faceI][i]
+                # Gauss point interpolation coefficient vector for each neighbouring cell
+                cx = psi.LRE().coeffs()[faceI][i]
 
-                    # Loop over Gauss point interpolation stencil and add
-                    # stencil cells contribution to matrix
-                    for j, cellIndex in enumerate(faceStencil):
+                # Loop over Gauss point interpolation stencil and add
+                # stencil cells contribution to matrix
+                for j, cellIndex in enumerate(faceStencil):
 
-                        # Internal face treatment
-                        if (faceI < nInternalFaces):
-                            # Owner and neighbour of current face
-                            cellP = owner[faceI]
-                            cellN = neighbour[faceI]
+                    # Owner and neighbour of current face
+                    cellP = owner[faceI]
+                    cellN = neighbour[faceI]
 
-                            # Store Laplace coefficients
-                            A[cellP][cellIndex] += gammaMagSf * gpW * (cx[j] @ nf)
-                            A[cellN][cellIndex] += - gammaMagSf * gpW * (cx[j] @ nf)
+                    # Store Laplace coefficients
+                    A[cellP][cellIndex] += gammaMagSf * gpW * (cx[j] @ nf)
+                    A[cellN][cellIndex] += - gammaMagSf * gpW * (cx[j] @ nf)
 
-                        else:
-                            # Boundary face treatment
-                            cellP = owner[faceI]
-                            # Ovo ne moze tu bit za zeroGradient!!!!
-                            # Napraviti kako je u foamu, ic po patchevima i onda za svaki patch
-                            # Dodat kontribuciju.
-                            A[cellP][cellIndex] += gammaMagSf * gpW * (cx[j] @ nf)
+        # Loop over paches (treat boundary faces).
+        # Depending on boundary type call corresponding patch function and add source and diag terms
+        for patch in psi._boundaryConditionsDict:
 
-                            if (j == len(faceStencil) - 1):
-                                # Boundary face centre is not included in face stencil list
-                                # Its contribution is added last, after cell centres
+            # Get patch type
+            patchType = psi._boundaryConditionsDict[patch]['type']
 
-                                patchType = mesh.facePatchType(faceI, psi)
-                                patchName = mesh.facePatchName(faceI, psi)
-                                addSourceContribution = eval("self." + patchType)
-
-                                # This can be done in more elegant manner
-                                addSourceContribution(self, gp, faceI, psi, patchName, source, cellP, gammaMagSf, nf, gpW,
-                                                      cx[j + 1])
-
-                        # Face have same contribution for cellP and cellN
-                        # print(f'face owner: {cellP}')
-                        # print(f'face neighbour: {cellN}')
-                        # print(f'face normal: {nf}')
-                        # print(f'i counter, cellIndex: {i}, {cellIndex}')
-                        # print(f'face Gauss point interpolation coeffcitient: cx')
-                        # print(f'face centre: {mesh.Cf()[faceI]}')
-                        # print(f'stencil neigbour: {cellIndex}')
+            # Call corresponding patch function
+            patchContribution = eval("LaplacianOperatorBoundaryConditions." + patchType)
+            patchContribution(self, psi, mesh, source, A, patch, gamma)
 
         # File to write data for debug
         fileName = "LaplacianMatrix.debug.txt"
@@ -118,31 +97,149 @@ class LaplacianOperator():
 
         return source, A
 
-    def fixedValue(self, gp, faceI, psi, patchName, source, cellP, gammaMagSf, nf, gpW, cx):
+class LaplacianOperatorBoundaryConditions(LaplacianOperator):
 
-        value = convert_to_float(psi._boundaryConditionsDict[patchName]['value']['uniform'])
-        source[cellP][0] += -gammaMagSf * gpW * (cx @ nf) * value
-
-    def analyticalFixedValue(self, gp, faceI, psi, patchName, source, cellP, gammaMagSf, nf, gpW, cx):
-
-        # TO_DO ovisno o gausovoj tocki promjenit iznos!
-
-        # I do like CFD, page 222, equation b
-        # value depends on Gauss point location
-        faceCentre = psi._mesh.Cf()[faceI]
-        x = gp[0]#faceCentre[0]
-        y = gp[1]#faceCentre[1]
-        #x = faceCentre[0]
-        #y = faceCentre[1]
-        # print(f'x: {x}, y: {y}')
-        #value = x * x - y * y
-        # value = 2.0*y / (pow((1+x),2)+pow(y,2))
-        value = np.sin(1*y) * np.exp(1*x)
-
-        source[cellP][0] += -gammaMagSf * gpW * (cx @ nf) * value
-
-    def empty(self, gp, faceI, psi, patchName, source, cellP, gammaMagSf, nf, gpW, cx):
+    def empty(self, psi, mesh, source, A, patch, gamma):
         pass
 
-    def zeroGradient(self, gp, faceI, psi, patchName, source, cellP, gammaMagSf, nf, gpW, cx):
-        pass
+    def zeroGradient(self, psi, mesh, source, A, patch, gamma):
+
+        # Preliminaries
+        startFace = mesh.boundary[patch]['startFace']
+        nFaces = mesh.boundary[patch]['nFaces']
+
+        GaussPointsAndWeights = psi._facesGaussPointsAndWeights
+        owner = mesh._owner
+
+        # Prescribed value at boundary
+        value = convert_to_float(psi._boundaryConditionsDict[patch]['value']['uniform'])
+
+        # Loop over patch faces
+        for faceI in range(startFace, startFace + nFaces):
+
+            # Diffusivity coefficient multiplied with face magnitude
+            gammaMagSf = mesh.magSf[faceI] * gamma
+
+            # Face normal
+            nf = mesh.nf[faceI]
+
+            # List of face Gauss points [1] and weights [0]
+            faceGaussPointsAndWeights = GaussPointsAndWeights[faceI]
+
+            # Current face points interpolation stencil
+            faceStencil = psi._facesInterpolationMolecule[faceI]
+
+            # Loop over Gauss points
+            for i, gp in enumerate(faceGaussPointsAndWeights[1]):
+
+                # Gauss point gp weight
+                gpW = faceGaussPointsAndWeights[0][i]
+
+                # Gauss point interpolation coefficient vector for each neighbouring cell
+                cx = psi.LRE().coeffs()[faceI][i]
+
+                # Loop over Gauss point interpolation stencil and add
+                # stencil cells contribution to matrix
+                for j, cellIndex in enumerate(faceStencil):
+                    cellP = owner[faceI]
+                    A[cellP][cellIndex] += gammaMagSf * gpW * (cx[j] @ nf)
+
+    def fixedValue(self, psi, mesh, source, A, patch, gamma):
+
+        # Preliminaries
+        startFace = mesh.boundary[patch]['startFace']
+        nFaces = mesh.boundary[patch]['nFaces']
+
+        GaussPointsAndWeights = psi._facesGaussPointsAndWeights
+        owner = mesh._owner
+
+        # Prescribed value at boundary
+        value = convert_to_float(psi._boundaryConditionsDict[patch]['value']['uniform'])
+
+        # Loop over patch faces
+        for faceI in range(startFace, startFace + nFaces):
+
+            # Diffusivity coefficient multiplied with face magnitude
+            gammaMagSf = mesh.magSf[faceI] * gamma
+
+            # Face normal
+            nf = mesh.nf[faceI]
+
+            # List of face Gauss points [1] and weights [0]
+            faceGaussPointsAndWeights = GaussPointsAndWeights[faceI]
+
+            # Current face points interpolation stencil
+            faceStencil = psi._facesInterpolationMolecule[faceI]
+
+            # Loop over Gauss points
+            for i, gp in enumerate(faceGaussPointsAndWeights[1]):
+
+                # Gauss point gp weight
+                gpW = faceGaussPointsAndWeights[0][i]
+
+                # Gauss point interpolation coefficient vector for each neighbouring cell
+                cx = psi.LRE().coeffs()[faceI][i]
+
+                # Loop over Gauss point interpolation stencil and add
+                # stencil cells contribution to matrix
+                for j, cellIndex in enumerate(faceStencil):
+
+                    cellP = owner[faceI]
+                    A[cellP][cellIndex] += gammaMagSf * gpW * (cx[j] @ nf)
+
+                    if (j == len(faceStencil) - 1):
+                        # Boundary face centre is not included in face stencil list
+                        # Its contribution is added last, after cell centres
+                        source[cellP][0] += -gammaMagSf * gpW * (cx[j+1] @ nf) * value
+
+
+    def analyticalFixedValue(self, psi, mesh, source, A, patch, gamma):
+        # Preliminaries
+        startFace = mesh.boundary[patch]['startFace']
+        nFaces = mesh.boundary[patch]['nFaces']
+
+        GaussPointsAndWeights = psi._facesGaussPointsAndWeights
+        owner = mesh._owner
+
+        # Loop over patch faces
+        for faceI in range(startFace, startFace + nFaces):
+
+            # Diffusivity coefficient multiplied with face magnitude
+            gammaMagSf = mesh.magSf[faceI] * gamma
+
+            # Face normal
+            nf = mesh.nf[faceI]
+
+            # List of face Gauss points [1] and weights [0]
+            faceGaussPointsAndWeights = GaussPointsAndWeights[faceI]
+
+            # Current face points interpolation stencil
+            faceStencil = psi._facesInterpolationMolecule[faceI]
+
+            # Loop over Gauss points
+            for i, gp in enumerate(faceGaussPointsAndWeights[1]):
+
+                # Gauss point gp weight
+                gpW = faceGaussPointsAndWeights[0][i]
+
+                # Gauss point interpolation coefficient vector for each neighbouring cell
+                cx = psi.LRE().coeffs()[faceI][i]
+
+                # Loop over Gauss point interpolation stencil and add
+                # stencil cells contribution to matrix
+                for j, cellIndex in enumerate(faceStencil):
+
+                    cellP = owner[faceI]
+                    A[cellP][cellIndex] += gammaMagSf * gpW * (cx[j] @ nf)
+
+                    if (j == len(faceStencil) - 1):
+
+                        # Hard-coded value at boundary
+                        x = gp[0]
+                        y = gp[1]
+                        value = np.sin(5*y) * np.exp(5*x)
+
+                        # Boundary face centre is not included in face stencil list
+                        # Its contribution is added last, after cell centres
+                        source[cellP][0] += -gammaMagSf * gpW * (cx[j+1] @ nf) * value
+

@@ -1,5 +1,0 @@
---> @timed decorator; function fvMesh._make_faces took 0.001235s to run
---> @timed decorator; function fvMesh._make_faces_data took 0.016027s to run
---> @timed decorator; function fvMesh._make_cells_data took 0.018669s to run
---> @timed decorator; function volScalarField.makeFacesGaussPointsAndWeights took 0.017457s to run
---> @timed decorator; function localRegressionEstimator.makeCoeffs took 0.025726s to run
