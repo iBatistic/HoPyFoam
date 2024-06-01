@@ -183,14 +183,14 @@ def read_controlDict_file() -> dict:
     return controlDict
 
 
-def readBoundaryAndInitialConditions(fileName) -> tuple[str, list, dict]:
+def readBoundaryAndInitialConditions(fileName, time=ZERO) -> tuple[str, list, dict]:
     boundaryConditionsDict = dict()
     dataType, initialValue = '', ''
     boundaryConditions = []
     print(f"Reading field {fileName}\n")
 
     try:
-        with (open(ZERO + '/' + fileName) as f):
+        with (open(time + '/' + fileName) as f):
 
             file = f.read()
             file = remove_cpp_comments(file)
@@ -229,7 +229,7 @@ def readBoundaryAndInitialConditions(fileName) -> tuple[str, list, dict]:
                                                        {"type": patchDict[1],
                                                         patchDict[2]: {patchDict[3]: patchDict[4]}}})
     except FileNotFoundError:
-        print(f"Error: {ZERO}/{fileName} not found!")
+        print(f"Error: {time}/{fileName} not found!")
     except Exception as e:
         print(f"An error occured: {e}")
 

@@ -17,6 +17,7 @@ import warnings
 
 from src.foam.field.volField import volField
 from src.foam.argList import BANNER
+from src.foam.foamFileParser import convert_to_float
 
 class volScalarField(volField):
 
@@ -42,7 +43,7 @@ class volScalarField(volField):
         # A quick check for stencil size requirement
         if (self._Np >= self._Nn):
             warnings.warn(f"\nNumber of neighbours {self._Nn} is smaller than number "
-                          f"of Taylor expansion terms {self._Np}\n")
+                          f"of Taylor expansion terms {self._Np}\n", stacklevel=3)
 
         # Initialise volField
         super().__init__(fieldName, mesh, boundaryAndInitialConditions)
@@ -82,7 +83,7 @@ class volScalarField(volField):
 
     # Write field in OpenFOAM format
     def write(self, timeValue):
-        print(f"Writing {self._fieldName} field fot time {timeValue} s\n")
+        print(f"\nWriting {self._fieldName} field fot time {timeValue} s\n")
 
         filePath = str(timeValue) + "/" + self._fieldName
 
@@ -105,16 +106,26 @@ class volScalarField(volField):
             file.write(f"{self._mesh.nCells}\n")
             file.write("(\n")
             for i in range(self._mesh.nCells):
-                file.write(f'{self._cellValues[i][0]} \n')
+                file.write(f'{self._cellValues[i]} \n')
             file.write(")\n")
             file.write(";\n\n")
 
             # Write boundary field
             file.write('boundaryField\n{\n')
             for patch in self._boundaryConditionsDict:
-                patchName = str(patch)
-                patchType = self._boundaryConditionsDict[patchName]['type']
-                file.write(f'\t{patchName}\n\t{{\n\t\ttype\t{patchType};\n'
-                           f'\t\tvalue\tuniform 0;\n'
-                           f'\t}}\n')
+                patchType = self._boundaryConditionsDict[patch]['type']
+                file.write(f'\t{patch}\n\t{{\n\t\ttype\t{patchType};\n')
+                #
+                if patchType == 'fixedValue' or patchType == 'analyticalFixedValue':
+                    value = convert_to_float(self._boundaryConditionsDict[patch]['value']['uniform'])
+                    file.write(f'\t\tvalue\tuniform {value};\n')
+
+                    if patchType == 'analyticalFixedValue':
+                        warnings.warn(f"At boundaries analyticalFixedValue has some dummy value from 0\n "
+                                      f"This can mess up postprocessing, however to write exact values "
+                                      f"at face centre integration\n should be performed at each boundary "
+                                      f"face using values at Gauss points, This can be added later if needed...\n", stacklevel=3)
+
+                file.write(f'\t}}\n')
+
             file.write('}\n')

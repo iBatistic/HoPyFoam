@@ -1,6 +1,11 @@
+# Ignore venv directory
+venv*
+
 literature/
 test/
 doc/
+
+# Work in progress directory
 *.wip
 
 # Debug files are stored with this extension

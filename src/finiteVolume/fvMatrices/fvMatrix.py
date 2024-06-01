@@ -11,6 +11,7 @@ __author__ = 'Ivan Batistić & Philip Cardiff'
 __email__ = 'ibatistic@fsb.hr, philip.cardiff@ucd.ie'
 
 import numpy as np
+from petsc4py import PETSc
 
 class fvMatrix():
 
@@ -28,49 +29,27 @@ class fvMatrix():
 
     def solve(self):
         print('Solving system of equations\n')
-        self._psi._cellValues = np.linalg.solve(self._A, self._source)
 
-        # # Relative error, L_2 and L_infinity norm
-        # avgRelError = 0.0
-        # maxRelError = 0.0
-        # L2 = 0.0
-        # Linf = 0.0
-        #
-        # # Hard-coded check for convergence for example_2
-        # maxSolVal = 0.0
-        # for cellI in range(self._psi._mesh.nCells):
-        #     x = self._psi._mesh.C[cellI][0]
-        #     y = self._psi._mesh.C[cellI][1]
-        #
-        #     #sol = x * x - y * y
-        #     sol = abs(np.sin(5*y) * np.exp(5*x))
-        #     if sol > maxSolVal:
-        #         maxSolVal = sol
-        #
-        # for cellI in range(self._psi._mesh.nCells):
-        #
-        #     x = self._psi._mesh.C[cellI][0]
-        #     y = self._psi._mesh.C[cellI][1]
-        #
-        #     #analySol = x*x - y*y + 1e-10
-        #     analySol = np.sin(5*y) * np.exp(5*x)
-        #     diff = abs(self._psi._cellValues[cellI] - analySol)[0]
-        #     #print(diff, analySol, x, y)
-        #     relError = 100 * abs(diff / maxSolVal)
-        #     avgRelError += relError
-        #
-        #     if(relError > maxRelError):
-        #        maxRelError = relError
-        #
-        #     L2 += np.math.pow(diff, 2)
-        #
-        #     if(diff > Linf):
-        #         Linf = diff
-        #
-        # L2 = np.math.sqrt(L2/self._psi._mesh.nCells)
-        # avgRelError /= self._psi._mesh.nCells
-        #
-        # print(f'\nAverage relative error: {avgRelError:.4e} %')
-        # print(f'Maximal relative error: {maxRelError:.4e} %')
-        # print(f'L_2 error: {L2:.4e}')
-        # print(f'L_infinty error: {Linf:.4e}')
+        # Create Krylov Subspace Solver
+        ksp = PETSc.KSP()
+        ksp.create(comm=self._A.getComm())
+
+        # Solver is Conjugate Gradient
+        ksp.setType(PETSc.KSP.Type.CG)
+
+        # Set preconditioner (PC) to GAMG (Geometric-Algebraic MultiGrid)
+        ksp.getPC().setType(PETSc.PC.Type.GAMG)
+
+        ksp.setOperators(self._A)
+
+        # Solver settings
+        ksp.max_it = 100
+        ksp.rtol = 1e-6
+        ksp.atol = 0
+
+        # Create right vector and solve system of equations
+        x = self._A.createVecRight()
+        ksp.solve(self._source, x)
+        self._psi._cellValues = x.getArray()
+
+        print("\t Iterations= %d, residual norm = %g" % (ksp.its, ksp.norm))

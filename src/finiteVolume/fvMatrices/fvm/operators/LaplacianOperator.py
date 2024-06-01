@@ -12,7 +12,10 @@ __email__ = 'ibatistic@fsb.hr, philip.cardiff@ucd.ie'
 __all__ = ['LaplacianOperator']
 
 import os
+import sys
 from src.foam.foamFileParser import *
+from petsc4py import PETSc
+
 
 class LaplacianOperator():
 
@@ -23,13 +26,22 @@ class LaplacianOperator():
 
         mesh = psi._mesh
         nCells = mesh.nCells
-        nFaces = mesh.nFaces
         nInternalFaces = mesh.nInternalFaces
-        dimensions = psi._dimensions
 
-        source = np.zeros([nCells, dimensions], dtype=float)
+        # Read PETSc options file
+        OptDB = PETSc.Options()
 
-        A = np.zeros([nCells, nCells], dtype=float)
+        A = PETSc.Mat()
+        A.create(comm=PETSc.COMM_WORLD)
+        A.setSizes((nCells, nCells))
+        A.setType(PETSc.Mat.Type.AIJ)
+
+        # Allow matrix options set from options file
+        A.setFromOptions()
+
+        # Estimate the number of nonzeros to be expected on each row
+        # This is not working as it should, input is how wide the diagonal, depends on numbering
+        #A.setPreallocationNNZ(psi.Nn)
 
         owner = mesh._owner
         neighbour = mesh._neighbour
@@ -67,10 +79,14 @@ class LaplacianOperator():
                     # Owner and neighbour of current face
                     cellP = owner[faceI]
                     cellN = neighbour[faceI]
+                    value = gammaMagSf * gpW * (cx[j] @ nf)
 
                     # Store Laplace coefficients
-                    A[cellP][cellIndex] += gammaMagSf * gpW * (cx[j] @ nf)
-                    A[cellN][cellIndex] += - gammaMagSf * gpW * (cx[j] @ nf)
+                    A.setValues(cellP, cellIndex, value, addv=PETSc.InsertMode.ADD_VALUES)
+                    A.setValues(cellN, cellIndex, - value, addv=PETSc.InsertMode.ADD_VALUES)
+
+        source = A.createVecLeft()
+        source.set(0.0)
 
         # Loop over paches (treat boundary faces).
         # Depending on boundary type call corresponding patch function and add source and diag terms
@@ -83,66 +99,20 @@ class LaplacianOperator():
             patchContribution = eval("LaplacianOperatorBoundaryConditions." + patchType)
             patchContribution(self, psi, mesh, source, A, patch, gamma)
 
-        # File to write data for debug
-        fileName = "LaplacianMatrix.debug.txt"
+        # Finish matrix assembly
+        A.assemble()
+        source.assemble()
 
-        # Remove old file
-        if os.path.exists(fileName):
-            os.remove(fileName)
-
-        # Write matrix and solution vector
-        file = open(fileName, 'w')
-        file.write(f'{str(A)} \n {str(source)}')
-        file.close()
-
+        #A.view(PETSc.Viewer("APETSc.mat", 'w'))
         return source, A
 
 class LaplacianOperatorBoundaryConditions(LaplacianOperator):
 
-    def empty(self, psi, mesh, source, A, patch, gamma):
+    def empty(self, *args):
         pass
 
-    def zeroGradient(self, psi, mesh, source, A, patch, gamma):
-
-        # Preliminaries
-        startFace = mesh.boundary[patch]['startFace']
-        nFaces = mesh.boundary[patch]['nFaces']
-
-        GaussPointsAndWeights = psi._facesGaussPointsAndWeights
-        owner = mesh._owner
-
-        # Prescribed value at boundary
-        value = convert_to_float(psi._boundaryConditionsDict[patch]['value']['uniform'])
-
-        # Loop over patch faces
-        for faceI in range(startFace, startFace + nFaces):
-
-            # Diffusivity coefficient multiplied with face magnitude
-            gammaMagSf = mesh.magSf[faceI] * gamma
-
-            # Face normal
-            nf = mesh.nf[faceI]
-
-            # List of face Gauss points [1] and weights [0]
-            faceGaussPointsAndWeights = GaussPointsAndWeights[faceI]
-
-            # Current face points interpolation stencil
-            faceStencil = psi._facesInterpolationMolecule[faceI]
-
-            # Loop over Gauss points
-            for i, gp in enumerate(faceGaussPointsAndWeights[1]):
-
-                # Gauss point gp weight
-                gpW = faceGaussPointsAndWeights[0][i]
-
-                # Gauss point interpolation coefficient vector for each neighbouring cell
-                cx = psi.LRE().coeffs()[faceI][i]
-
-                # Loop over Gauss point interpolation stencil and add
-                # stencil cells contribution to matrix
-                for j, cellIndex in enumerate(faceStencil):
-                    cellP = owner[faceI]
-                    A[cellP][cellIndex] += gammaMagSf * gpW * (cx[j] @ nf)
+    def zeroGradient(self, *args):
+        pass
 
     def fixedValue(self, psi, mesh, source, A, patch, gamma):
 
@@ -154,7 +124,7 @@ class LaplacianOperatorBoundaryConditions(LaplacianOperator):
         owner = mesh._owner
 
         # Prescribed value at boundary
-        value = convert_to_float(psi._boundaryConditionsDict[patch]['value']['uniform'])
+        prescribedValue = convert_to_float(psi._boundaryConditionsDict[patch]['value']['uniform'])
 
         # Loop over patch faces
         for faceI in range(startFace, startFace + nFaces):
@@ -185,13 +155,14 @@ class LaplacianOperatorBoundaryConditions(LaplacianOperator):
                 for j, cellIndex in enumerate(faceStencil):
 
                     cellP = owner[faceI]
-                    A[cellP][cellIndex] += gammaMagSf * gpW * (cx[j] @ nf)
+                    value = gammaMagSf * gpW * (cx[j] @ nf)
+                    A.setValues(cellP, cellIndex, value, addv=PETSc.InsertMode.ADD_VALUES)
 
                     if (j == len(faceStencil) - 1):
                         # Boundary face centre is not included in face stencil list
                         # Its contribution is added last, after cell centres
-                        source[cellP][0] += -gammaMagSf * gpW * (cx[j+1] @ nf) * value
-
+                        value = gammaMagSf * gpW * (cx[j+1] @ nf) * prescribedValue
+                        source.setValue(cellP, - value, addv=PETSc.InsertMode.ADD_VALUES)
 
     def analyticalFixedValue(self, psi, mesh, source, A, patch, gamma):
         # Preliminaries
@@ -230,16 +201,18 @@ class LaplacianOperatorBoundaryConditions(LaplacianOperator):
                 for j, cellIndex in enumerate(faceStencil):
 
                     cellP = owner[faceI]
-                    A[cellP][cellIndex] += gammaMagSf * gpW * (cx[j] @ nf)
+                    value = gammaMagSf * gpW * (cx[j] @ nf)
+                    A.setValues(cellP, cellIndex, value, addv=PETSc.InsertMode.ADD_VALUES)
 
                     if (j == len(faceStencil) - 1):
 
                         # Hard-coded value at boundary
                         x = gp[0]
                         y = gp[1]
-                        value = np.sin(5*y) * np.exp(5*x)
+                        presribedValue = np.sin(5*y) * np.exp(5*x)
 
+                        value = gammaMagSf * gpW * (cx[j+1] @ nf) * presribedValue
                         # Boundary face centre is not included in face stencil list
                         # Its contribution is added last, after cell centres
-                        source[cellP][0] += -gammaMagSf * gpW * (cx[j+1] @ nf) * value
+                        source.setValue(cellP, - value, addv=PETSc.InsertMode.ADD_VALUES)
 
