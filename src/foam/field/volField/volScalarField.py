@@ -24,7 +24,7 @@ class volScalarField(volField):
     # Field dimensions
     _dimensions = 1
 
-    def __init__(self, fieldName, mesh, boundaryAndInitialConditions):
+    def __init__(self, fieldName, mesh, scalarFieldEntries):
 
         # Number of integration points per CV face
         self._GaussPointsNb = 7
@@ -46,7 +46,7 @@ class volScalarField(volField):
                           f"of Taylor expansion terms {self._Np}\n", stacklevel=3)
 
         # Initialise volField
-        super().__init__(fieldName, mesh, boundaryAndInitialConditions)
+        super().__init__(fieldName, mesh, scalarFieldEntries)
 
 
     # Returns number of terms in Taylor expression, hard-coded

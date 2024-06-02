@@ -20,21 +20,18 @@ from src.foam.decorators import timed
 
 class volField(field, volFieldBoundaryConditions):
 
-    def __init__(self, fieldName, mesh, boundaryAndInitialConditions):
+    def __init__(self, fieldName, mesh, scalarFieldEntries):
         super().__init__(fieldName)
 
         # Initialise class variables
         self._mesh = mesh
 
-        # Unpack boundaryAndInitialConditions tuple
-        initialValue, self._dataType, self._boundaryConditionsDict \
-            = boundaryAndInitialConditions
+        # Unpack scalarFieldEntries tuple
+        cellValues, self._dataType, self._boundaryConditionsDict \
+            = scalarFieldEntries
 
-        self._initialValue = convert_to_float(initialValue)
-
-        # Initialise volume field at cell centres and at boundary
-        self._cellValues = self.initCellValues(mesh, self._initialValue, self._dimensions)
-        self._boundaryValues = self.initBoundaryValues(mesh, self._boundaryConditionsDict)
+        # Set values at cell centres
+        self._cellValues = self.setCellValues(mesh, cellValues, self._dimensions)
 
         # Make interpolation molecule for faces
         self._facesInterpolationMolecule = self.makeFacesInterpolationMolecule()
@@ -45,41 +42,24 @@ class volField(field, volFieldBoundaryConditions):
         self._LRE = localRegressionEstimator(self, mesh)
 
 
-    # TO_DO: Only works for scalar because initialValue is parsed as scalar, be careful with this later on!
+    def LRE(self) -> localRegressionEstimator:
+        return self._LRE
+
     @classmethod
-    def initCellValues(self, mesh, initialValue, dimensions):
-        nCells = mesh.nCells
-        # Initialise cell values to 1 and multiply then with corresponding initialValue
-        cellValues = np.ones((dimensions, nCells), dtype=float)
+    def setCellValues(self, mesh, cellValues, dimensions):
 
-        # Loop over components and multiply each component with initial value
-        for cmpt in range(dimensions):
-            cellValues[cmpt] *= initialValue
+        # Initialise cell values array
+        values = np.zeros((dimensions, mesh.nCells), dtype=float)
 
-        return cellValues
-
-    # TO_DO: extend to account for vector, now is written for scalar values
-    @classmethod
-    def initBoundaryValues(self, mesh, boundaryConditionsDict):
-        dimensions = self._dimensions
-        boundaryFaceNb = mesh.boundaryFaceNb
-
-        # Initialise boundary values
-        boundaryValues = \
-            np.zeros((dimensions, boundaryFaceNb), dtype=float)
-
-        # Loop over patches and call corresponding patch evaluate function
-        for patch in boundaryConditionsDict:
-            patchName = str(patch)
-            patchType = boundaryConditionsDict[patchName]['type']
-            if(patchType != 'empty'):
-                patchValue = boundaryConditionsDict[patchName]['value']['uniform']
-
-            evaluate = eval("volFieldBoundaryConditions.evaluate." + patchType)
-
-            evaluate(mesh, patchName, patchValue, boundaryValues, dimensions)
-
-        return boundaryValues
+        # Case of uniform internal field
+        if (len(cellValues) == 1):
+            values[:] = cellValues[0][0]
+        else:
+            # Case of non-uniform internal field
+            for index in range(mesh.nCells):
+                for cmpt in range(dimensions):
+                    values[cmpt][index] = cellValues[index][cmpt]
+        return values
 
     #This is brute force approach. Should be done more efficiently!
     def makeFacesInterpolationMolecule(self) -> list[int]:
@@ -128,18 +108,13 @@ class volField(field, volFieldBoundaryConditions):
         # Each face has list of corresponding Gauss points and their weights
         facesGaussPointsAndWeights = []
 
-        # Loop over patches and check is there empty patches
-        # If there are empty patches, Gauss points are calculated in one plane
+        # If the mesh is 2D, Gauss points are calculated in one plane
         emptyDir = None
-        for patch in boundaryConditionsDict:
-            patchType = boundaryConditionsDict[patch]['type']
-            if (patchType == 'empty'):
-                print(f"Empty patch found, Gauss points are calculated in X-Y plane")
-                # Z vector is empty direction
-                emptyDir = 2
-                break
+        if mesh.twoD:
+            print(f"Empty patch found, Gauss points are calculated in X-Y plane")
+            emptyDir = 2
 
-        # Loop over all faces
+        # Loop over all faces and calculate Gauss points and weights
         for faceI in range(len(mesh._Cf)):
             face = mesh.faces[faceI]
             GaussPoints, weights = face.GaussPointsAndWeights(self._GaussPointsNb, emptyDir)
@@ -147,5 +122,3 @@ class volField(field, volFieldBoundaryConditions):
 
         return facesGaussPointsAndWeights
 
-    def LRE(self) -> localRegressionEstimator:
-        return self._LRE

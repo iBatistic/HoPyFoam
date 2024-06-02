@@ -33,7 +33,7 @@ mesh = fvMesh()
 solControl = solutionControl()
 
 # Initialise scalar field T
-T = volScalarField("T", mesh, readBoundaryAndInitialConditions("T"))
+T = volScalarField("T", mesh, readScalarField("T"))
 
 while(solControl.loop()):
 

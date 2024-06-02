@@ -45,11 +45,11 @@ and owner of the OPENFOAM® and OpenCFD® trade marks.
         Laplace equation for 2D square domain (1 x 1 m), left and right patches have value of 1, top and bottom patches are zero gradient.
 
     - __`example_2 `__
-        
-        - `example_2/tet`  tetrahedral mesh, coarse and fine
-        - `example_2/hex`  hexahedral discretisation using `blockMesh`
-        
         Laplace equation for 2D square domain (1 x 1 m)  with analytical solution from "_I do like CFD, VOL.1, Katate Masatsuka, edition II_"
         page 222, solution c.
+        - `example_2/tet`  tetrahedral mesh, coarse and fine mesh available
+        - `example_2/hex`  hexahedral discretisation using `blockMesh`
+        
+        
         
 

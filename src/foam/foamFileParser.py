@@ -8,6 +8,7 @@ Description
     Collection of parser functions for OpenFOAM files
 """
 import re
+import sys
 import numpy as np
 
 CONSTANT = 'constant/'
@@ -36,8 +37,10 @@ def read_points_file() -> np.ndarray:
 
     except FileNotFoundError:
         print(f"Error: {POLYMESH}/points not found!")
+        sys.exit(1)
     except Exception as e:
         print(f"An error occured: {e}")
+        sys.exit(1)
 
     return points
 
@@ -65,8 +68,10 @@ def read_faces_file() -> np.ndarray:
 
     except FileNotFoundError:
         print(f"Error: {POLYMESH}/faces not found!")
+        sys.exit(1)
     except Exception as e:
         print(f"An error occured: {e}")
+        sys.exit(1)
 
     return faces
 
@@ -88,8 +93,10 @@ def read_owner_file() -> np.ndarray:
 
     except FileNotFoundError:
         print(f"Error: {POLYMESH}/owner not found!")
+        sys.exit(1)
     except Exception as e:
         print(f"An error occured: {e}")
+        sys.exit(1)
 
     return owner
 
@@ -111,8 +118,10 @@ def read_neighbour_file() -> np.ndarray:
 
     except FileNotFoundError:
         print(f"Error: {POLYMESH}/neighbour not found!")
+        sys.exit(1)
     except Exception as e:
         print(f"An error occured: {e}")
+        sys.exit(1)
 
     return neighbour
 
@@ -147,8 +156,10 @@ def read_boundary_File() -> dict:
                 boundary[file[i]] = patchData
     except FileNotFoundError:
         print(f"Error: {POLYMESH}/boundary not found!")
+        sys.exit(1)
     except Exception as e:
         print(f"An error occured: {e}")
+        sys.exit(1)
 
     return boundary
 
@@ -178,15 +189,20 @@ def read_controlDict_file() -> dict:
 
     except FileNotFoundError:
         print(f"Error: {POLYMESH}/controlDict not found!")
+        sys.exit(1)
     except Exception as e:
         print(f"An error occured: {e}")
+        sys.exit(1)
+
     return controlDict
 
 
-def readBoundaryAndInitialConditions(fileName, time=ZERO) -> tuple[str, list, dict]:
+def readScalarField(fileName, time=ZERO) -> tuple[str, list, dict]:
     boundaryConditionsDict = dict()
     dataType, initialValue = '', ''
     boundaryConditions = []
+    cellValues = [[]]
+
     print(f"Reading field {fileName}\n")
 
     try:
@@ -201,7 +217,8 @@ def readBoundaryAndInitialConditions(fileName, time=ZERO) -> tuple[str, list, di
             # Remove dimensions line and internalField(initial field value) line, pass boundaryField line
             for line in file:
                 if line.startswith('internalField'):
-                    initialValue = line.strip().split()[2]
+                    initialValue = line.strip().split()[-1]
+                    valueType = line.strip().split()[1]
                 elif line.startswith('dimensions'):
                     dataType = line.strip()
                 elif line.startswith('boundaryField'):
@@ -209,6 +226,34 @@ def readBoundaryAndInitialConditions(fileName, time=ZERO) -> tuple[str, list, di
                 else:
                     boundaryConditions.append(line)
 
+            # This part of code reads nonuniform cell field
+            if (valueType == 'nonuniform'):
+
+                firstIndex = boundaryConditions.index('(') + 1
+                lastIndex = boundaryConditions.index(')')
+
+                values = boundaryConditions[firstIndex:lastIndex]
+
+                for index, cellVal in enumerate(values):
+                    cellValues.append([convert_to_float(cellVal)])
+                # Just clean empty list which is constructed on initialisation
+                cellValues = [sublist for sublist in cellValues if sublist]
+
+                del boundaryConditions[firstIndex:lastIndex]
+
+                numberOfCells = boundaryConditions.pop(0)
+                if(len(cellValues) != convert_to_int(numberOfCells)):
+                    raise SyntaxError(f'Number of elements {len(cellValues)} does not match'
+                                      f' required number {convert_to_int(numberOfCells)}')
+                # Remove ( and ) brackets inside which cell data was stored
+                del boundaryConditions[0:2]
+
+            elif (valueType == 'uniform'):
+                cellValues[0] = ([convert_to_float(initialValue)])
+            else:
+                raise SyntaxError(f'Value type should be unifrom or nonuniform, type is {dataType}')
+
+            # Read boundary conditions
             file = ''.join(boundaryConditions)
             file = re.sub(r'^\{(.*)\}$', r'\1', file)
 
@@ -227,18 +272,24 @@ def readBoundaryAndInitialConditions(fileName, time=ZERO) -> tuple[str, list, di
                 else:
                     boundaryConditionsDict.update({patchNames[i]: \
                                                        {"type": patchDict[1],
-                                                        patchDict[2]: {patchDict[3]: patchDict[4]}}})
+                                                       patchDict[2]: {patchDict[3]: patchDict[4]}}})
+
+    except SyntaxError as e:
+        print(f'Syntax error: {e}')
+        sys.exit(1)
     except FileNotFoundError:
         print(f"Error: {time}/{fileName} not found!")
+        sys.exit(1)
     except Exception as e:
         print(f"An error occured: {e}")
+        sys.exit(1)
 
     # Clean dataType from brackets and put dimensions in list
     dataType = dataType.split()[1:]
     for index, element in enumerate(dataType):
         dataType[index] = re.sub(r'\D', '', element)
 
-    return initialValue, dataType, boundaryConditionsDict
+    return cellValues, dataType, boundaryConditionsDict
 
 
 def readTransportProperties(name) -> tuple[float, list]:
@@ -268,8 +319,10 @@ def readTransportProperties(name) -> tuple[float, list]:
 
     except FileNotFoundError:
         print(f"Error: {CONSTANT}/transportProperties' not found!")
+        sys.exit(1)
     except Exception as e:
         print(f"An error occured: {e}")
+        sys.exit(1)
 
     return dataType, gamma
 
