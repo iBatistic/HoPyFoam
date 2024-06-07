@@ -12,15 +12,17 @@ __email__ = 'ibatistic@fsb.hr, philip.cardiff@ucd.ie'
 
 from src.finiteVolume.fvMatrices.fvm.operators import *
 from src.finiteVolume.fvMatrices.fvMatrix import fvMatrix
-from src.foam.foamFileParser import *
 
 class fvm(fvMatrix):
 
     @classmethod
-    def defineMatrix(self, psi, operator, gamma):
+    def defineMatrix(self, psi, operatorName, gamma):
 
-        gammaDimensions, gammaValue = readTransportProperties(gamma)
+        # Make function for Laplacian, LaplacianTrace and LaplacianTranspose
+        if (operatorName[:9] == "Laplacian"):
+            operator = eval("LaplacianOperator." + operatorName)
+        else:
+            raise ValueError("Unknown operator: " + operatorName)
 
-        source, A = LaplacianOperator.Laplacian(psi, gammaValue)
-
-        return source, A
+        # Operator function returns A,b
+        return operator(psi, gamma)

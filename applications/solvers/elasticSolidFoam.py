@@ -5,7 +5,9 @@
 |__|__|___|__|  |_  |__|  |_____|__|__|_|_|_|   |  License: GPLv3
                 |___|
 Description
-    Steady-state Laplace's equation solver
+    Solid solver with small strains and small rotations assumption (linear geometry).
+    Total displacement is the primary unknown.
+    The stress is calculated according to linear-elastic Hooke law.
 """
 __author__ = 'Ivan Batistić & Philip Cardiff'
 __email__  = 'ibatistic@fsb.hr, philip.cardiff@ucd.ie'
@@ -19,7 +21,7 @@ from src.finiteVolume.fvMesh import fvMesh
 from src.foam.argList import arg_parser
 from src.foam.foamFileParser import *
 from src.finiteVolume.cfdTools import solutionControl
-from src.foam.field.volField.volScalarField import volScalarField
+from src.foam.field.volField.volVectorField import volVectorField
 from src.finiteVolume.fvMatrices.fvm.fvm import fvm
 
 # Execution start time, used to measured elapsed clock time
@@ -32,24 +34,28 @@ args = arg_parser().parse_args()
 mesh = fvMesh()
 solControl = solutionControl()
 
-# Initialise scalar field T
-T = volScalarField("T", mesh, readScalarField("T"), N=3, Nn=16, GpNb=7)
+# Initialise displacement vector field U
+U = volVectorField("U", mesh, readVectorField("U"),  N=2, Nn=8, GpNb=5)
 
-# Read diffusivity from transportProperties dict
-gammaDimensions, gammaValue = readTransportProperties('DT')
+# Read mechanichalProperties dict to get first and second Lame parameters
+mu, lam = readMechanicalProperties()
 
 while(solControl.loop()):
 
     print(f'Time = {solControl.time()} \n')
 
-    # Assemble the Laplacian matrix
-    laplacianMatrix = fvm.construct(T, 'Laplacian', gammaValue)
+    # Assemble the Laplacian, LaplacianTranspose and LaplacianTrace matrices
+    laplacian = fvm.construct(U, 'Laplacian', mu)
+    laplacianTranspose = fvm.construct(U, 'LaplacianTranspose', mu)
+    laplacianTrace = fvm.construct(U, 'LaplacianTrace', lam)
 
-    # Solve Laplacian matrix
-    laplacianMatrix.solve()
+    Matrix = laplacian# + laplacianTranspose + laplacianTrace
+
+    # Solve system matrix
+    Matrix.solve()
 
     # Write results
-    T.write(solControl.time())
+    U.write(solControl.time())
 
     print(f'Execution time = '
           f'{timeModule.perf_counter() - exec_start_time:.2f} s \n')

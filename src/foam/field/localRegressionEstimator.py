@@ -96,8 +96,8 @@ class localRegressionEstimator():
                     neiC = mesh.C[molecules[faceI][i]]
 
                     # Taylor series terms calculated using nested for loops
-                    N = volField.N;
-                    pos = int(0);
+                    N = volField.N
+                    pos = int(0)
                     for I in range(N+1):
                         for J in range(N-I+1):
                             fact = np.math.factorial(I) * np.math.factorial(J)

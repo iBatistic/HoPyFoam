@@ -10,6 +10,7 @@ Description
 
 import re
 import numpy as np
+import warnings
 
 from src.foam.field import field
 from src.foam.foamFileParser import *
@@ -20,18 +21,37 @@ from src.foam.decorators import timed
 
 class volField(field, volFieldBoundaryConditions):
 
-    def __init__(self, fieldName, mesh, scalarFieldEntries):
+    def __init__(self, fieldName, mesh, fieldEntries, N, Nn, GpNb):
+
         super().__init__(fieldName)
+
+        # Number of integration points per CV face
+        self._GaussPointsNb = GpNb
+
+        # Order of interpolation (1 = linear, 2 = quadratic, 3 = qubic...)
+        self._N = N
+
+        # Number of terms in Taylor expansion
+        # Example: Second order (quadratic interpolation) has 6 terms in 2D case
+        # Example: First order (linear interpolation) has 3 terms in 2D case
+        self. _Np  = self.TaylorTermsNumber(self._N, mesh.twoD)
+
+        # Number of cells in interpolation stencil
+        self._Nn = Nn
+
+        # A quick check for stencil size requirement
+        if (self._Np >= self._Nn):
+            warnings.warn(f"\nNumber of neighbours {self._Nn} is smaller than number "
+                          f"of Taylor expansion terms {self._Np}\n", stacklevel=3)
 
         # Initialise class variables
         self._mesh = mesh
 
-        # Unpack scalarFieldEntries tuple
-        cellValues, self._dataType, self._boundaryConditionsDict \
-            = scalarFieldEntries
+        # Unpack fieldEntries tuple
+        cellValuesData, self._dataType, self._boundaryConditionsDict = fieldEntries
 
         # Set values at cell centres
-        self._cellValues = self.setCellValues(mesh, cellValues, self._dimensions)
+        self._cellValues = self.setCellValues(mesh, cellValuesData, self._dimensions)
 
         # Make interpolation molecule for faces
         self._facesInterpolationMolecule = self.makeFacesInterpolationMolecule()
@@ -45,20 +65,56 @@ class volField(field, volFieldBoundaryConditions):
     def LRE(self) -> localRegressionEstimator:
         return self._LRE
 
+    # Return number of terms in Taylor expression
+    # For two-dimensional cases we are ignoring terms related to z coordinate!
+    @property
+    def Np(self) -> int:
+        return self._Np
+
+    # Return number of neighbours for this field type
+    @property
+    def Nn(self) -> int:
+        return self._Nn
+
+    # Interpolation  order, polynomial degree
+    @property
+    def N(self) -> int:
+        return self._N
+
+    # Returns number of terms in Taylor expression, hard-coded
     @classmethod
-    def setCellValues(self, mesh, cellValues, dimensions):
+    def TaylorTermsNumber(self, N, twoD) -> int:
+
+        if (twoD):
+            if (N == 1):
+                return 3
+            elif (N == 2):
+                return 6
+            elif (N == 3):
+                return 10
+            else:
+                ValueError("Not implemented")
+        else:
+            ValueError("Not implemented")
+
+    # Convert cell data from 0/field to cellValues list
+    # This data can be uniform or non-uniform
+    @classmethod
+    def setCellValues(self, mesh, cellValuesData, dimensions):
 
         # Initialise cell values array
-        values = np.zeros((dimensions, mesh.nCells), dtype=float)
+        values = np.zeros((mesh.nCells, dimensions), dtype=float)
 
         # Case of uniform internal field
-        if (len(cellValues) == 1):
-            values[:] = cellValues[0][0]
+        if (len(cellValuesData) == 1):
+            values[:] = cellValuesData[0]
+
         else:
             # Case of non-uniform internal field
+            print(__file__, 'setCellValues')
             for index in range(mesh.nCells):
                 for cmpt in range(dimensions):
-                    values[cmpt][index] = cellValues[index][cmpt]
+                    values[index][cmpt] = cellValuesData[index][cmpt]
         return values
 
     #This is brute force approach. Should be done more efficiently!

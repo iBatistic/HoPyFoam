@@ -9,7 +9,7 @@ Description
 """
 __author__ = 'Ivan Batistić'
 __email__ = 'ibatistic@fsb.unizg.hr'
-__all__ = ['volScalarField']
+__all__ = ['volVectorField']
 
 import os
 import shutil
@@ -19,15 +19,15 @@ from src.foam.field.volField import volField
 from src.foam.argList import BANNER
 from src.foam.foamFileParser import convert_to_float
 
-class volScalarField(volField):
+class volVectorField(volField):
 
     # Field dimensions
-    _dimensions = 1
+    _dimensions = 3
 
-    def __init__(self, fieldName, mesh, scalarFieldEntries, N=3, Nn=16, GpNb=7):
+    def __init__(self, fieldName, mesh, vectorFieldEntries, N=3, Nn=16, GpNb=7):
 
         # Initialise volField
-        super().__init__(fieldName, mesh, scalarFieldEntries, N, Nn, GpNb)
+        super().__init__(fieldName, mesh, vectorFieldEntries, N, Nn, GpNb)
 
     @property
     def dim(self) -> int:
@@ -50,15 +50,15 @@ class volScalarField(volField):
         with open(filePath, 'w') as file:
             # Write file banner
             file.write('/*\n' + BANNER + '*/\n')
-            file.write(self.foamFileDict('volScalarField', self._fieldName, timeValue))
-            file.write("\ndimensions      [0 0 0 1 0 0 0]; \n\n")
+            file.write(self.foamFileDict('volVectorField', self._fieldName, timeValue))
+            file.write("\ndimensions      [0 1 0 0 0 0 0]; \n\n")
 
             # Write internal field
-            file.write("internalField   nonuniform List<scalar>\n")
+            file.write("internalField   nonuniform List<vector>\n")
             file.write(f"{self._mesh.nCells}\n(\n")
 
             for i in range(self._mesh.nCells):
-                file.write(f'{self._cellValues[i][0]} \n')
+                file.write(f'({" ".join(str(x) for x in self._cellValues[i])}) \n')
             file.write(")\n;\n\n")
 
             # Write boundary field
@@ -67,15 +67,9 @@ class volScalarField(volField):
                 patchType = self._boundaryConditionsDict[patch]['type']
                 file.write(f'\t{patch}\n\t{{\n\t\ttype\t{patchType};\n')
 
-                if patchType == 'fixedValue' or patchType == 'analyticalFixedValue':
-                    value = convert_to_float(self._boundaryConditionsDict[patch]['value']['uniform'])
-                    file.write(f'\t\tvalue\tuniform {value};\n')
-
-                    if patchType == 'analyticalFixedValue':
-                        warnings.warn(f"At boundaries analyticalFixedValue has some dummy value from 0\n "
-                                      f"This can mess up postprocessing, however to write exact values "
-                                      f"at face centre integration\n should be performed at each boundary "
-                                      f"face using values at Gauss points, This can be added later if needed...\n", stacklevel=3)
+                if patchType == 'fixedValue':
+                    value = self._boundaryConditionsDict[patch]['value']['uniform']
+                    file.write(f'\t\tvalue\tuniform ({" ".join(str(x) for x in value)});\n')
 
                 file.write(f'\t}}\n')
 

@@ -13,9 +13,18 @@ import numpy as np
 
 CONSTANT = 'constant/'
 POLYMESH = CONSTANT + 'polyMesh'
+MECHANICALPROPERTIES = CONSTANT + 'mechanicalProperties'
 SYSTEM = 'system'
 ZERO = '0'
 
+SWICHVALUES = {
+    "no": False,
+    "off": False,
+    "yes": True,
+    "on": True,
+}
+def convertToBool(string):
+    return SWICHVALUES.get(string.lower(), None)
 
 def read_points_file() -> np.ndarray:
     try:
@@ -196,102 +205,6 @@ def read_controlDict_file() -> dict:
 
     return controlDict
 
-
-def readScalarField(fileName, time=ZERO) -> tuple[str, list, dict]:
-    boundaryConditionsDict = dict()
-    dataType, initialValue = '', ''
-    boundaryConditions = []
-    cellValues = [[]]
-
-    print(f"Reading field {fileName}\n")
-
-    try:
-        with (open(time + '/' + fileName) as f):
-
-            file = f.read()
-            file = remove_cpp_comments(file)
-            file = remove_foamFile_dict(file)
-            file = re.sub(r';', '', file)
-            file = [line for line in file.splitlines() if line.strip()]
-
-            # Remove dimensions line and internalField(initial field value) line, pass boundaryField line
-            for line in file:
-                if line.startswith('internalField'):
-                    initialValue = line.strip().split()[-1]
-                    valueType = line.strip().split()[1]
-                elif line.startswith('dimensions'):
-                    dataType = line.strip()
-                elif line.startswith('boundaryField'):
-                    pass
-                else:
-                    boundaryConditions.append(line)
-
-            # This part of code reads nonuniform cell field
-            if (valueType == 'nonuniform'):
-
-                firstIndex = boundaryConditions.index('(') + 1
-                lastIndex = boundaryConditions.index(')')
-
-                values = boundaryConditions[firstIndex:lastIndex]
-
-                for index, cellVal in enumerate(values):
-                    cellValues.append([convert_to_float(cellVal)])
-                # Just clean empty list which is constructed on initialisation
-                cellValues = [sublist for sublist in cellValues if sublist]
-
-                del boundaryConditions[firstIndex:lastIndex]
-
-                numberOfCells = boundaryConditions.pop(0)
-                if(len(cellValues) != convert_to_int(numberOfCells)):
-                    raise SyntaxError(f'Number of elements {len(cellValues)} does not match'
-                                      f' required number {convert_to_int(numberOfCells)}')
-                # Remove ( and ) brackets inside which cell data was stored
-                del boundaryConditions[0:2]
-
-            elif (valueType == 'uniform'):
-                cellValues[0] = ([convert_to_float(initialValue)])
-            else:
-                raise SyntaxError(f'Value type should be unifrom or nonuniform, type is {dataType}')
-
-            # Read boundary conditions
-            file = ''.join(boundaryConditions)
-            file = re.sub(r'^\{(.*)\}$', r'\1', file)
-
-            # Extract data inside curly brackets
-            patchDicts = re.findall(r'\{([^}]+)\}', file)
-
-            # Extract patch name above curly brackets
-            patchNames = re.sub(r'{[^}]*}*', ' ', file)
-            patchNames = patchNames.split()
-
-            for i in range(len(patchNames)):
-                patchDict = patchDicts[i].split()
-
-                if (patchDict[1] == 'empty'):
-                    boundaryConditionsDict.update({patchNames[i]: {"type": patchDict[1]}})
-                else:
-                    boundaryConditionsDict.update({patchNames[i]: \
-                                                       {"type": patchDict[1],
-                                                       patchDict[2]: {patchDict[3]: patchDict[4]}}})
-
-    except SyntaxError as e:
-        print(f'Syntax error: {e}')
-        sys.exit(1)
-    except FileNotFoundError:
-        print(f"Error: {time}/{fileName} not found!")
-        sys.exit(1)
-    except Exception as e:
-        print(f"An error occured: {e}")
-        sys.exit(1)
-
-    # Clean dataType from brackets and put dimensions in list
-    dataType = dataType.split()[1:]
-    for index, element in enumerate(dataType):
-        dataType[index] = re.sub(r'\D', '', element)
-
-    return cellValues, dataType, boundaryConditionsDict
-
-
 def readTransportProperties(name) -> tuple[float, list]:
     print(f"Reading diffusivity {name} in transportProperties dict\n")
 
@@ -373,7 +286,7 @@ def isFloat(value):
 
 
 def convert_to_float(string, check=False):
-    if (check):
+    if check:
         if isFloat(string):
             return float(string)
         else:
@@ -383,3 +296,219 @@ def convert_to_float(string, check=False):
         return float(string)
     else:
         return string
+
+def readMechanicalProperties(path=MECHANICALPROPERTIES) -> tuple[float, float]:
+
+    print(f"Reading mechanicalProperties dict\n")
+
+    try:
+        with (open(path) as f):
+            file = f.read()
+            file = remove_cpp_comments(file)
+            file = remove_foamFile_dict(file)
+            file = re.sub(r';', '', file)
+            file = [line for line in file.splitlines() if line.strip()]
+            planeStress = convertToBool(file[0].split()[1])
+
+            file = ''.join(file)
+            file = re.sub(r'^\{(.*)\}$', r'\1', file)
+
+            # Extract data inside curly brackets
+            properties = re.findall(r'\{([^}]+)\}', file)
+            properties = properties[0].split()
+
+            E = convert_to_float(properties[properties.index('E')+9])
+            nu = convert_to_float(properties[properties.index('nu')+9])
+    except SyntaxError as e:
+        print(f'Syntax error: {e}')
+        sys.exit(1)
+    except FileNotFoundError:
+        print(f"Error: {path} not found!")
+        sys.exit(1)
+    except Exception as e:
+        print(f"An error occured: {e}")
+        sys.exit(1)
+
+    mu = E / (2.0*(1.0 + nu))
+
+    if planeStress:
+        lam = nu * E / ((1.0 + nu)*(1.0 - nu))
+    else:
+        lam = nu * E / ((1.0 + nu)*(1.0 - 2.0*nu))
+
+    print(f'First Lame\'s parameter lambda: {lam}, '
+          f'second Lame\'s parameter mu: {mu}\n')
+
+    return mu, lam
+
+def readScalarField(fileName, time=ZERO) -> tuple[str, list, dict]:
+    boundaryConditionsDict = dict()
+    dataType, initialValue = '', ''
+    data = []
+    cellValues = [[]]
+
+    print(f"Reading field {fileName}\n")
+
+    try:
+        with (open(time + '/' + fileName) as f):
+
+            file = f.read()
+            file = remove_cpp_comments(file)
+            file = remove_foamFile_dict(file)
+            file = re.sub(r';', '', file)
+            file = [line for line in file.splitlines() if line.strip()]
+
+            # Remove dimensions line and internalField(initial field value) line, pass boundaryField line
+            for line in file:
+                if line.startswith('internalField'):
+                    initialValue = line.strip().split()[-1]
+                    valueType = line.strip().split()[1]
+                elif line.startswith('dimensions'):
+                    dataType = line.strip()
+                elif line.startswith('boundaryField'):
+                    pass
+                else:
+                    data.append(line)
+
+            # This part of code reads nonuniform cell field
+            if (valueType == 'nonuniform'):
+
+                firstIndex = data.index('(') + 1
+                lastIndex = data.index(')')
+
+                values = data[firstIndex:lastIndex]
+
+                for index, cellVal in enumerate(values):
+                    cellValues.append([convert_to_float(cellVal)])
+                # Just clean empty list which is constructed on initialisation
+                cellValues = [sublist for sublist in cellValues if sublist]
+
+                del data[firstIndex:lastIndex]
+
+                numberOfCells = data.pop(0)
+                if(len(cellValues) != convert_to_int(numberOfCells)):
+                    raise SyntaxError(f'Number of elements {len(cellValues)} does not match'
+                                      f' required number {convert_to_int(numberOfCells)}')
+                # Remove ( and ) brackets inside which cell data was stored
+                del data[0:2]
+
+            elif (valueType == 'uniform'):
+                cellValues[0] = ([convert_to_float(initialValue)])
+            else:
+                raise SyntaxError(f'Value type should be unifrom or nonuniform, type is {dataType}')
+
+            # Read boundary conditions
+            file = ''.join(data)
+            file = re.sub(r'^\{(.*)\}$', r'\1', file)
+
+            # Extract data inside curly brackets
+            patchDicts = re.findall(r'\{([^}]+)\}', file)
+
+            # Extract patch name above curly brackets
+            patchNames = re.sub(r'{[^}]*}*', ' ', file)
+            patchNames = patchNames.split()
+
+            for i in range(len(patchNames)):
+                patchDict = patchDicts[i].split()
+
+                if (patchDict[1] == 'empty'):
+                    boundaryConditionsDict.update({patchNames[i]: {"type": patchDict[1]}})
+                else:
+                    value = convert_to_float(patchDict[4])
+                    boundaryConditionsDict.update({patchNames[i]: \
+                                                       {"type": patchDict[1],
+                                                       patchDict[2]: {patchDict[3]: value}}})
+
+    except SyntaxError as e:
+        print(f'Syntax error: {e}')
+        sys.exit(1)
+    except FileNotFoundError:
+        print(f"Error: {time}/{fileName} not found!")
+        sys.exit(1)
+    except Exception as e:
+        print(f"An error occured: {e}")
+        sys.exit(1)
+
+    # Clean dataType from brackets and put dimensions in list
+    dataType = dataType.split()[1:]
+    for index, element in enumerate(dataType):
+        dataType[index] = re.sub(r'\D', '', element)
+
+    return cellValues, dataType, boundaryConditionsDict
+
+def readVectorField(fileName, time=ZERO) -> tuple[str, list, dict]:
+    boundaryConditionsDict = dict()
+    dataType, initialValue = '', []
+    data = []
+    cellValues = [[]]
+
+    print(f"Reading field {fileName}\n")
+
+    try:
+        with (open(time + '/' + fileName) as f):
+
+            file = f.read()
+            file = remove_cpp_comments(file)
+            file = remove_foamFile_dict(file)
+            file = re.sub(r';', '', file)
+            file = [line for line in file.splitlines() if line.strip()]
+
+            # Remove dimensions line and internalField(initial field value) line, pass boundaryField line
+            for line in file:
+                if line.startswith('internalField'):
+                    initialValue = [float(s.strip('()')) for s in line.strip().split()[-3:]]
+                    valueType = line.strip().split()[1]
+                elif line.startswith('dimensions'):
+                    dataType = line.strip()
+                elif line.startswith('boundaryField'):
+                    pass
+                else:
+                    data.append(line)
+
+            # This part of code reads nonuniform cell field
+            if (valueType == 'nonuniform'):
+                print("nonuniform vector field parser not implemented", __file__)
+
+            elif (valueType == 'uniform'):
+                cellValues[0] = initialValue
+            else:
+                raise SyntaxError(f'Value type should be unifrom or nonuniform, type is {dataType}')
+
+            # Read boundary conditions
+            file = ''.join(data)
+            file = re.sub(r'^\{(.*)\}$', r'\1', file)
+
+            # Extract data inside curly brackets
+            patchDicts = re.findall(r'\{([^}]+)\}', file)
+
+            # Extract patch name above curly brackets
+            patchNames = re.sub(r'{[^}]*}*', ' ', file)
+            patchNames = patchNames.split()
+
+            for i in range(len(patchNames)):
+                patchDict = patchDicts[i].split()
+
+                if (patchDict[1] == 'empty'):
+                    boundaryConditionsDict.update({patchNames[i]: {"type": patchDict[1]}})
+                else:
+                    value = [float(s.strip('()')) for s in patchDict[4:]]
+                    boundaryConditionsDict.update({patchNames[i]: \
+                                                       {"type": patchDict[1],
+                                                       patchDict[2]: {patchDict[3]: value}}})
+
+    except SyntaxError as e:
+        print(f'Syntax error: {e}')
+        sys.exit(1)
+    except FileNotFoundError:
+        print(f"Error: {time}/{fileName} not found!")
+        sys.exit(1)
+    except Exception as e:
+        print(f"An error occured: {e}")
+        sys.exit(1)
+
+    # Clean dataType from brackets and put dimensions in list
+    dataType = dataType.split()[1:]
+    for index, element in enumerate(dataType):
+        dataType[index] = re.sub(r'\D', '', element)
+
+    return cellValues, dataType, boundaryConditionsDict
