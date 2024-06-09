@@ -20,7 +20,16 @@ is similar to one from the [OpenFOAM](https://www.openfoam.com/) library.
     pip install -r requirements.txt
     ```
 
+3. Install some of the OpenFOAM distribution using the instructions on this [link](https://develop.openfoam.com/Development/openfoam/-/wikis/precompiled/debian). OpenFOAM is required for mesh generation and post-processing functionalities.
+
+4. To run cases, first source OpenFOAM shell session and then activate Python environment:
+    ```
+    openfoam2312
+    source venv-HoPyFoam/bin/activate
+    ```
+
 ### License
+
 This toolkit is released under the GNU General Public License (version 3). 
 More details can be found in the [LICENSE](./LICENSE.txt) file.
 
