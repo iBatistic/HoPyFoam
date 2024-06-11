@@ -18,11 +18,8 @@ class fvm(fvMatrix):
     @classmethod
     def defineMatrix(self, psi, operatorName, gamma):
 
-        # Make function for Laplacian, LaplacianTrace and LaplacianTranspose
-        if (operatorName[:9] == "Laplacian"):
-            operator = eval("LaplacianOperator." + operatorName)
-        else:
-            raise ValueError("Unknown operator: " + operatorName)
+        # Make function for Laplacian, LaplacianTrace or LaplacianTranspose
+        operator = eval(operatorName + "." + "construct")
 
         # Operator function returns A,b
         return operator(psi, gamma)

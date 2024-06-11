@@ -336,8 +336,8 @@ def readMechanicalProperties(path=MECHANICALPROPERTIES) -> tuple[float, float]:
     else:
         lam = nu * E / ((1.0 + nu)*(1.0 - 2.0*nu))
 
-    print(f'First Lame\'s parameter lambda: {lam}, '
-          f'second Lame\'s parameter mu: {mu}\n')
+    print(f'First Lame\'s parameter lambda: {lam:.2g}, '
+          f'second Lame\'s parameter mu: {mu:.2g}\n')
 
     return mu, lam
 
@@ -466,10 +466,10 @@ def readVectorField(fileName, time=ZERO) -> tuple[str, list, dict]:
                     data.append(line)
 
             # This part of code reads nonuniform cell field
-            if (valueType == 'nonuniform'):
+            if valueType == 'nonuniform':
                 print("nonuniform vector field parser not implemented", __file__)
 
-            elif (valueType == 'uniform'):
+            elif valueType == 'uniform':
                 cellValues[0] = initialValue
             else:
                 raise SyntaxError(f'Value type should be unifrom or nonuniform, type is {dataType}')

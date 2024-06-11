@@ -12,70 +12,38 @@ FoamFile
     version     2.0;
     format      ascii;
     class       dictionary;
-    location    "constant/polyMesh";
-    object      blockMeshDict;
+    location    "constant";
+    object      solidProperties;
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-convertToMeters 1;
+// linearGeometry: assumes small strains and rotations
+solidModel       coupledUnsLinearGeometryLinearElastic;
+//solidModel       coupledUnsLinGeometry;
+//solidModel     linearGeometryTotalDisplacement;
+//solidModel     unsLinearGeometry;
 
-vertices
-(
- (0 0 0)
- (2 0 0)
- (2 0.1 0)
- (0 0.1 0)
- (0 0 1)
- (2 0 1)
- (2 0.1 1)
- (0 0.1 1)
-);
+coupledUnsLinearGeometryLinearElasticCoeffs
+{
 
-blocks
-(
-    //hex (0 1 2 3 4 5 6 7) (3 3 1) simpleGrading (1 1 1) // mesh1
-    hex (0 1 2 3 4 5 6 7) (100 5 1) simpleGrading (1 1 1) // mesh1
-    //hex (0 1 2 3 4 5 6 7) (300 15 1) simpleGrading (1 1 1) // mesh2
-    //hex (0 1 2 3 4 5 6 7) (500 25 1) simpleGrading (1 1 1) // mesh3
-    //hex (0 1 2 3 4 5 6 7) (1000 50 1) simpleGrading (1 1 1) // mesh4
-    //hex (0 1 2 3 4 5 6 7) (2000 100 1) simpleGrading (1 1 1) // mesh5
-);
+}
 
-edges
-(
-);
+"linearGeometryTotalDisplacementCoeffs|unsLinearGeometryCoeffs"
+{
+    // Maximum number of momentum correctors
+    nCorrectors     1000;
 
-patches
-(
-    patch top
-    (
-        (2 3 7 6)
-    )
+    // Solution tolerance for displacement
+    solutionTolerance 1e-06;
 
-    patch left
-    (
-        (3 0 4 7)
-    )
+    // Alternative solution tolerance for displacement
+    alternativeTolerance 1e-07;
 
-    patch right
-    (
-        (1 2 6 5)
-    )
+    // Material law solution tolerance
+    materialTolerance 1e-05;
 
-    patch bottom
-    (
-        (0 1 5 4)
-    )
-
-    empty frontAndBackPlanes
-    (
-        (7 6 5 4)
-        (0 1 2 3)
-    )
-);
-
-mergePatchPairs
-(
-);
+    // Write frequency for the residuals
+    infoFrequency   100;
+}
 
 // ************************************************************************* //

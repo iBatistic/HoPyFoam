@@ -12,70 +12,50 @@ FoamFile
     version     2.0;
     format      ascii;
     class       dictionary;
-    location    "constant/polyMesh";
-    object      blockMeshDict;
+    object      fvSchemes;
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-convertToMeters 1;
+d2dt2Schemes
+{
+    default            steadyState;
+}
 
-vertices
-(
- (0 0 0)
- (2 0 0)
- (2 0.1 0)
- (0 0.1 0)
- (0 0 1)
- (2 0 1)
- (2 0.1 1)
- (0 0.1 1)
-);
+ddtSchemes
+{
+    default            steadyState;
+}
 
-blocks
-(
-    //hex (0 1 2 3 4 5 6 7) (3 3 1) simpleGrading (1 1 1) // mesh1
-    hex (0 1 2 3 4 5 6 7) (100 5 1) simpleGrading (1 1 1) // mesh1
-    //hex (0 1 2 3 4 5 6 7) (300 15 1) simpleGrading (1 1 1) // mesh2
-    //hex (0 1 2 3 4 5 6 7) (500 25 1) simpleGrading (1 1 1) // mesh3
-    //hex (0 1 2 3 4 5 6 7) (1000 50 1) simpleGrading (1 1 1) // mesh4
-    //hex (0 1 2 3 4 5 6 7) (2000 100 1) simpleGrading (1 1 1) // mesh5
-);
+gradSchemes
+{
+    default            leastSquares;
+}
 
-edges
-(
-);
+divSchemes
+{
+    default            Gauss linear;
+}
 
-patches
-(
-    patch top
-    (
-        (2 3 7 6)
-    )
+laplacianSchemes
+{
+    default            none;
+    laplacian(DD,D)    Gauss linear corrected;
+    laplacian(DDD,DD)  Gauss linear corrected;
+}
 
-    patch left
-    (
-        (3 0 4 7)
-    )
+snGradSchemes
+{
+    default            none;
+    snGrad(D)          corrected;
+    snGrad(DD)         corrected;
+}
 
-    patch right
-    (
-        (1 2 6 5)
-    )
-
-    patch bottom
-    (
-        (0 1 5 4)
-    )
-
-    empty frontAndBackPlanes
-    (
-        (7 6 5 4)
-        (0 1 2 3)
-    )
-);
-
-mergePatchPairs
-(
-);
+interpolationSchemes
+{
+    default            none;
+    interpolate(impK)  linear;
+    interpolate(grad(D)) linear;
+    interpolate(grad(laplacian(interpolate(impK),D))) linear;
+}
 
 // ************************************************************************* //

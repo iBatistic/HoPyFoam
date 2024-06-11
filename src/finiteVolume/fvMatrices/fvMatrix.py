@@ -10,8 +10,8 @@ Description
 __author__ = 'Ivan Batistić & Philip Cardiff'
 __email__ = 'ibatistic@fsb.hr, philip.cardiff@ucd.ie'
 
-import numpy as np
 from petsc4py import PETSc
+from src.foam.decorators import timed
 
 class fvMatrix():
 
@@ -27,6 +27,7 @@ class fvMatrix():
 
         return self(psi, source, A)
 
+    @timed
     def solve(self):
         print('Solving system of equations\n')
 
@@ -64,5 +65,5 @@ class fvMatrix():
     # Adding two fvMatrices
     def __add__(self, other):
         A = self._A + other._A
-        source = other._source + other._source
+        source = self._source + other._source
         return fvMatrix(self._psi, source, A)

@@ -10,7 +10,7 @@ Description
     The stress is calculated according to linear-elastic Hooke law.
 """
 __author__ = 'Ivan Batistić & Philip Cardiff'
-__email__  = 'ibatistic@fsb.hr, philip.cardiff@ucd.ie'
+__email__ = 'ibatistic@fsb.hr, philip.cardiff@ucd.ie'
 
 import time as timeModule
 import sys
@@ -35,12 +35,14 @@ mesh = fvMesh()
 solControl = solutionControl()
 
 # Initialise displacement vector field U
-U = volVectorField("U", mesh, readVectorField("U"),  N=2, Nn=8, GpNb=5)
+# N is interpolation order, Nn is number of cells in face stencil and GpNb
+# is number of Gauss points per face
+U = volVectorField("U", mesh, readVectorField("U"),  N=2, Nn=12, GpNb=5)
 
 # Read mechanichalProperties dict to get first and second Lame parameters
 mu, lam = readMechanicalProperties()
 
-while(solControl.loop()):
+while (solControl.loop()):
 
     print(f'Time = {solControl.time()} \n')
 
@@ -49,7 +51,7 @@ while(solControl.loop()):
     laplacianTranspose = fvm.construct(U, 'LaplacianTranspose', mu)
     laplacianTrace = fvm.construct(U, 'LaplacianTrace', lam)
 
-    Matrix = laplacian# + laplacianTranspose + laplacianTrace
+    Matrix = laplacian + laplacianTranspose + laplacianTrace
 
     # Solve system matrix
     Matrix.solve()

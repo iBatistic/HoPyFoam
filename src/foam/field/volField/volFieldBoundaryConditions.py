@@ -31,7 +31,11 @@ class volFieldBoundaryConditions():
         def zeroGradient(w_diag, Q):
             pass
 
+        def solidTraction(w_diag, Q):
+            pass
 
+    # Evaluate will be used in future to set values at boundaries after
+    # cell centred values are calculated
     class evaluate:
 
         def fixedValue(mesh, patchName, patchValue, boundaryValues, dimensions):

@@ -71,6 +71,12 @@ class volVectorField(volField):
                     value = self._boundaryConditionsDict[patch]['value']['uniform']
                     file.write(f'\t\tvalue\tuniform ({" ".join(str(x) for x in value)});\n')
 
+                if patchType == 'solidTraction':
+                    warnings.warn(f"Displacement values at solidTraction patches are not\n "
+                                  f" written. This can mess up postprocessing in paraview."
+                                  f" Use only cell values for visualisation.\n",
+                                  stacklevel=3)
+
                 file.write(f'\t}}\n')
 
             file.write('}\n')

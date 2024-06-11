@@ -1,3 +1,18 @@
+/*
+ _____     _____     _____ _____ _____ _____    |  High-order Python FOAM
+|  |  |___|  _  |_ _|   __|     |  _  |     |   |  Python Version: 3.10
+|     | . |   __| | |   __|  |  |     | | | |   |  Code Version: 0.0
+|__|__|___|__|  |_  |__|  |_____|__|__|_|_|_|   |  License: GPLv3
+                |___|
+*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    object      fvSchemes;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 /*--------------------------------*- C++ -*----------------------------------*\
 | solids4foam: solid mechanics and fluid-solid interaction simulations        |
 | Version:     v2.0                                                           |
@@ -12,70 +27,45 @@ FoamFile
     version     2.0;
     format      ascii;
     class       dictionary;
-    location    "constant/polyMesh";
-    object      blockMeshDict;
+    object      fvSchemes;
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-convertToMeters 1;
+d2dt2Schemes
+{
+    default            none;
+}
 
-vertices
-(
- (0 0 0)
- (2 0 0)
- (2 0.1 0)
- (0 0.1 0)
- (0 0 1)
- (2 0 1)
- (2 0.1 1)
- (0 0.1 1)
-);
+ddtSchemes
+{
+    default            none;
+}
 
-blocks
-(
-    //hex (0 1 2 3 4 5 6 7) (3 3 1) simpleGrading (1 1 1) // mesh1
-    hex (0 1 2 3 4 5 6 7) (100 5 1) simpleGrading (1 1 1) // mesh1
-    //hex (0 1 2 3 4 5 6 7) (300 15 1) simpleGrading (1 1 1) // mesh2
-    //hex (0 1 2 3 4 5 6 7) (500 25 1) simpleGrading (1 1 1) // mesh3
-    //hex (0 1 2 3 4 5 6 7) (1000 50 1) simpleGrading (1 1 1) // mesh4
-    //hex (0 1 2 3 4 5 6 7) (2000 100 1) simpleGrading (1 1 1) // mesh5
-);
+gradSchemes
+{
+    default            none;
+}
 
-edges
-(
-);
+divSchemes
+{
+    default            none;
+}
 
-patches
-(
-    patch top
-    (
-        (2 3 7 6)
-    )
+laplacianSchemes
+{
+    default            none;
+}
 
-    patch left
-    (
-        (3 0 4 7)
-    )
+snGradSchemes
+{
+    default            none;
+}
 
-    patch right
-    (
-        (1 2 6 5)
-    )
+interpolationSchemes
+{
+    default            none;
+}
 
-    patch bottom
-    (
-        (0 1 5 4)
-    )
-
-    empty frontAndBackPlanes
-    (
-        (7 6 5 4)
-        (0 1 2 3)
-    )
-);
-
-mergePatchPairs
-(
-);
+// ************************************************************************* //
 
 // ************************************************************************* //
