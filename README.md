@@ -46,7 +46,7 @@ and owner of the OPENFOAM® and OpenCFD® trade marks.
     - __`1D_heatConduction.py`__   
         Python script for 1D heat conduction with linear temperature profile.
 
-    - __`1D_heatConduction_MMS.py` __
+    - __`1D_heatConduction_MMS.py`__
         Python script for 1D heat conduction with variable source term and analytical solution obtained using MMS.
 
 - __`LaplacianFoam`__
@@ -55,11 +55,15 @@ and owner of the OPENFOAM® and OpenCFD® trade marks.
         Laplace equation for 2D square domain (1 x 1 m), left and right patches have value of 1, top and bottom patches are zero gradient.
 
     - __`example_2 `__
-        Laplace equation for 2D square domain (1 x 1 m)  with analytical solution from "_I do like CFD, VOL.1, Katate Masatsuka, edition II_"
+        The laplace equation for 2D square domain (1 x 1 m)  with analytical solution from "_I do like CFD, VOL.1, Katate Masatsuka, edition II_"
         page 222, solution c.
         - `example_2/tet`  tetrahedral mesh, coarse and fine mesh available
         - `example_2/hex`  hexahedral discretisation using `blockMesh`
         
-        
+ - __`elasticSolidFoam`__
+
+    - __`cantilever2D`__
+        Rectangular beam 2 x 0:1 m with a Young’s modulus of 200 GPa and a Poisson’s ration of 0.3. The beam is fixed on the left boundary,
+        and a uniform distributed traction of 1 MPa is applied to the right boundary; the top and bottom boundaries are traction-free.  
         
 
