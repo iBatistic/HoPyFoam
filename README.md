@@ -27,7 +27,7 @@ is similar to one from the [OpenFOAM](https://www.openfoam.com/) library.
     openfoam2312
     source venv-HoPyFoam/bin/activate
     ```
-    Run tutorial case using `./Allrun` script
+    All tutorial cases have a corresponding `./Allrun` script to run them.   
 
 ### License
 
