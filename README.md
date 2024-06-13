@@ -15,7 +15,7 @@ is similar to one from the [OpenFOAM](https://www.openfoam.com/) library.
 1. Clone the directory with `git clone git@github.com:iBatistic/HoPyFVM.git`
 2. Required python are listed in `requirements.txt` and can be installed easily with `venv`:  
     ```
-    virtualenv --no-site-packages venv-HoPyFoam
+    virtualenv venv-HoPyFoam
     source venv-HoPyFoam/bin/activate
     pip install -r requirements.txt
     ```
