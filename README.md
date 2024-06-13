@@ -12,7 +12,7 @@ is similar to one from the [OpenFOAM](https://www.openfoam.com/) library.
 
 ### Installation
 
-1. Clone the directory with `git clone git@github.com:iBatistic/HoPyFVM.git`
+1. Clone the directory with `git clone git@github.com:iBatistic/HoPyFoam.git`
 2. Required python are listed in `requirements.txt` and can be installed easily with `venv`:  
     ```
     virtualenv venv-HoPyFoam
