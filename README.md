@@ -12,21 +12,22 @@ is similar to one from the [OpenFOAM](https://www.openfoam.com/) library.
 
 ### Installation
 
-1. Clone the directory with `git clone git@github.com:iBatistic/HoPyFVM.git`
+1. Clone the directory with `git clone git@github.com:iBatistic/HoPyFoam.git`
 2. Required python are listed in `requirements.txt` and can be installed easily with `venv`:  
     ```
-    virtualenv --no-site-packages venv-HoPyFoam
+    virtualenv venv-HoPyFoam
     source venv-HoPyFoam/bin/activate
     pip install -r requirements.txt
     ```
 
-3. Install some of the OpenFOAM distribution using the instructions on this [link](https://develop.openfoam.com/Development/openfoam/-/wikis/precompiled/debian). OpenFOAM is required for mesh generation and post-processing functionalities.
+3. Install some of the OpenFOAM.COM distribution using the instructions on this [link](https://develop.openfoam.com/Development/openfoam/-/wikis/precompiled/debian). OpenFOAM is required for mesh generation and post-processing functionalities.
 
 4. To run cases, first source OpenFOAM shell session and then activate Python environment:
     ```
     openfoam2312
     source venv-HoPyFoam/bin/activate
     ```
+    All tutorial cases have a corresponding `./Allrun` script to run them.   
 
 ### License
 
@@ -45,7 +46,7 @@ and owner of the OPENFOAM® and OpenCFD® trade marks.
     - __`1D_heatConduction.py`__   
         Python script for 1D heat conduction with linear temperature profile.
 
-    - __`1D_heatConduction_MMS.py` __
+    - __`1D_heatConduction_MMS.py`__
         Python script for 1D heat conduction with variable source term and analytical solution obtained using MMS.
 
 - __`LaplacianFoam`__
@@ -54,11 +55,15 @@ and owner of the OPENFOAM® and OpenCFD® trade marks.
         Laplace equation for 2D square domain (1 x 1 m), left and right patches have value of 1, top and bottom patches are zero gradient.
 
     - __`example_2 `__
-        Laplace equation for 2D square domain (1 x 1 m)  with analytical solution from "_I do like CFD, VOL.1, Katate Masatsuka, edition II_"
+        The laplace equation for 2D square domain (1 x 1 m)  with analytical solution from "_I do like CFD, VOL.1, Katate Masatsuka, edition II_"
         page 222, solution c.
         - `example_2/tet`  tetrahedral mesh, coarse and fine mesh available
         - `example_2/hex`  hexahedral discretisation using `blockMesh`
         
-        
+ - __`elasticSolidFoam`__
+
+    - __`cantilever2D`__
+        Rectangular beam 2 x 0:1 m with a Young’s modulus of 200 GPa and a Poisson’s ration of 0.3. The beam is fixed on the left boundary,
+        and a uniform distributed traction of 1 MPa is applied to the right boundary; the top and bottom boundaries are traction-free.  
         
 
