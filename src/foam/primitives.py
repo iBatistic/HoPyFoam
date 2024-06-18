@@ -7,6 +7,7 @@
 Description
     Different geometrical primitives
 """
+import sys
 
 import numpy as np
 
@@ -60,15 +61,15 @@ class face():
         if emptyDir is None:
             # 3D case, Gauss points are distributed on face
             # TO_DO
-            pass
+            sys.exit(1)
         else:
             # 2D case, Gauss points are distributed on the line
             GaussPoints, weights = np.polynomial.legendre.leggauss(GaussPoinsNb)
 
-            facePoints = self.points()
-
             # Normalize the weights
             weights /= np.sum(weights)
+
+            facePoints = self.points()
 
             # Project faces onto normal plane defined with emtyDir
             faceIn2D = [point[:emptyDir] for point in facePoints]
@@ -89,9 +90,7 @@ class face():
             faceIn2D = [list(inner_tuple) for inner_tuple in unique_lists]
 
             # Get position of gauss points using face points
-            # Scale weights of the quadrature because we are not integrating from -1 to 1
             faceGaussPoints = []
-            faceWeights = []
 
             for gp,w in zip(GaussPoints, weights):
                 pointA = np.array(faceIn2D[1])
@@ -100,10 +99,8 @@ class face():
                 halfFacePoint = pointB + (pointA - pointB)/2
 
                 faceGaussPoint = halfFacePoint + halfFaceLen*gp*(pointA-pointB)/(2*halfFaceLen)
-                faceWeight = w * halfFaceLen
 
                 faceGaussPoints.append(faceGaussPoint)
-                faceWeights.append(faceWeight)
 
             # Face centre in empty direction
             faceCentreEmptyDir = self.centre()[emptyDir]
