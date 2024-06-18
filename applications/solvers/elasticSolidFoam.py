@@ -37,7 +37,7 @@ solControl = solutionControl()
 # Initialise displacement vector field U
 # N is interpolation order, Nn is number of cells in face stencil and GpNb
 # is number of Gauss points per face
-U = volVectorField("U", mesh, readVectorField("U"),  N=2, Nn=12, GpNb=5)
+U = volVectorField("U", mesh, readVectorField("U"),  N=3, Nn=16, GpNb=7)
 
 # Read mechanichalProperties dict to get first and second Lame parameters
 mu, lam = readMechanicalProperties()

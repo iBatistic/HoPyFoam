@@ -67,6 +67,9 @@ class face():
 
             facePoints = self.points()
 
+            # Normalize the weights
+            weights /= np.sum(weights)
+
             # Project faces onto normal plane defined with emtyDir
             faceIn2D = [point[:emptyDir] for point in facePoints]
 
@@ -108,7 +111,7 @@ class face():
             # Make 3D points from 2D points
             faceGaussPoints = [[point[0], point[1], faceCentreEmptyDir] for point in faceGaussPoints]
 
-            return faceGaussPoints, faceWeights
+            return faceGaussPoints, weights
 
     def normal(self):
 

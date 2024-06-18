@@ -336,8 +336,8 @@ def readMechanicalProperties(path=MECHANICALPROPERTIES) -> tuple[float, float]:
     else:
         lam = nu * E / ((1.0 + nu)*(1.0 - 2.0*nu))
 
-    print(f'First Lame\'s parameter lambda: {lam:.2g}, '
-          f'second Lame\'s parameter mu: {mu:.2g}\n')
+    print(f'First Lame\'s parameter lambda: {lam:.5f}, '
+          f'second Lame\'s parameter mu: {mu:.5f}\n')
 
     return mu, lam
 

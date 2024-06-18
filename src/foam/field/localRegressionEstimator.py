@@ -82,6 +82,13 @@ class localRegressionEstimator():
         # Loop over Gauss points of interior faces
         for faceI in range(mesh.nFaces):
 
+            # Loop over face neighbours Nn and find max distance
+            rs = 0.0
+            for i in range(Nn[faceI]):
+                neiC = mesh.C[molecules[faceI][i]]
+                rsNew = max(rs, np.linalg.norm(mesh.Cf[faceI] - neiC))
+                rs = rsNew
+
             # Loop over face Gauss points
             for gpI in facesGaussPoints[faceI]:
 
@@ -103,13 +110,6 @@ class localRegressionEstimator():
                             fact = np.math.factorial(I) * np.math.factorial(J)
                             Q[pos, i] = pow(neiC[0]-gpI[0], I) * pow(neiC[1]-gpI[1], J) * (1.0/fact)
                             pos += 1;
-
-               # Loop over neighbours Nn and find max distance
-                rs = 0.0
-                for i in range(Nn[faceI]):
-                    neiC = mesh.C[molecules[faceI][i]]
-                    rsNew = max(rs, np.linalg.norm(gpI - neiC))
-                    rs = rsNew
 
                 # Loop over neighbours Nn and construct matrix W (diagonal matrix)
                 w_diag = np.zeros(volField.Nn)

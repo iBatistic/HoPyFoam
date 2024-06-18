@@ -12,6 +12,7 @@ Description
 
 import sys
 import os
+import math
 
 sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/../../../../.")
 from src.finiteVolume.fvMesh import fvMesh
@@ -48,7 +49,7 @@ for cellI in range(mesh.nCells):
     #analySol = x*x - y*y + 1e-10
     analySol = np.sin(5*y) * np.exp(5*x)
 
-    diff = abs(T._cellValues[0][cellI] - analySol)
+    diff = abs(T._cellValues[cellI][0] - analySol)
 
     relError = 100 * abs(diff / maxSolVal)
     avgRelError += relError
@@ -56,12 +57,12 @@ for cellI in range(mesh.nCells):
     if(relError > maxRelError):
        maxRelError = relError
 
-    L2 += np.math.pow(diff, 2)
+    L2 += math.pow(diff, 2)
 
     if(diff > Linf):
         Linf = diff
 
-L2 = np.math.sqrt(L2/mesh.nCells)
+L2 = math.sqrt(L2/mesh.nCells)
 avgRelError /= mesh.nCells
 
 print(f'\nAverage relative error: {avgRelError:.4e} %')

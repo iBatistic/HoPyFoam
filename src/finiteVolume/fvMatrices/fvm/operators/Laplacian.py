@@ -180,6 +180,7 @@ class Laplacian():
                     cellP = owner[faceI]
                     cellN = neighbour[faceI]
                     scalarVal = gammaMagSf * gpW * (cx[j] @ nf)
+
                     tenValue = scalarVal * np.array([[1, 0, 0],
                                          [0, 1, 0],
                                          [0, 0, 1]], dtype=PETSc.ScalarType)
@@ -299,7 +300,6 @@ class LaplacianBoundaryConditions(Laplacian):
                     scalarVal = gammaMagSf * gpW * (cx[j] @ nf)
 
                     if (psi.dim == 1):
-                        # Scalar coeffs in case of scalar field
                         A.setValues(cellP, cellIndex, scalarVal, ADD)
                     else:
                         # Tensor coeffs in case of vector field
