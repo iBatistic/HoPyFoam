@@ -53,12 +53,7 @@ boundaryField
         value           uniform ( 0 0 0 );
     }
 
-    back
-    {
-         type            empty;
-    }
-
-    front
+    frontAndBackPlanes
     {
          type            empty;
     }
