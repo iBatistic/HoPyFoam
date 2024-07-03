@@ -66,4 +66,5 @@ and owner of the OPENFOAM® and OpenCFD® trade marks.
         Rectangular beam 2 x 0:1 m with a Young’s modulus of 200 GPa and a Poisson’s ration of 0.3. The beam is fixed on the left boundary,
         and a uniform distributed traction of 1 MPa is applied to the right boundary; the top and bottom boundaries are traction-free.  
         
-
+### Contact, support, and contribution information
+To contact the authors about __HoPyFOAM__, please use the issue tracker of the GitHub project. Bug reports and contributions to new features are welcome.
