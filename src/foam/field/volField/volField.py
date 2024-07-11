@@ -51,7 +51,8 @@ class volField(field, volFieldBoundaryConditions):
         cellValuesData, self._dataType, self._boundaryConditionsDict = fieldEntries
 
         # Set values at cell centres
-        self._cellValues = self.setCellValues(mesh, cellValuesData, self._dimensions)
+        self._cellValues = self.initCellValues(mesh, cellValuesData, self._dimensions)
+        self._boundaryValues = self.initBoundaryValues(mesh, self._dimensions)
 
         # Make interpolation molecule for faces
         self._facesInterpolationMolecule = self.makeFacesInterpolationMolecule()
@@ -97,10 +98,24 @@ class volField(field, volFieldBoundaryConditions):
         else:
             ValueError("Not implemented")
 
+    def evaluateBoundary(self):
+
+        bdDict = self._boundaryConditionsDict
+
+        # Loop over patches and call corresponding patch evaluate function
+        for patch in bdDict:
+
+            patchName = str(patch)
+            patchType = bdDict[patchName]['type']
+
+            evaluate = eval("volFieldBoundaryConditions.evaluate." + patchType)
+
+            evaluate(self, self._mesh, bdDict,  patchName, self._boundaryValues)
+
     # Convert cell data from 0/field to cellValues list
     # This data can be uniform or non-uniform
     @classmethod
-    def setCellValues(self, mesh, cellValuesData, dimensions):
+    def initCellValues(self, mesh, cellValuesData, dimensions):
 
         # Initialise cell values array
         values = np.zeros((mesh.nCells, dimensions), dtype=float)
@@ -111,11 +126,18 @@ class volField(field, volFieldBoundaryConditions):
 
         else:
             # Case of non-uniform internal field
-            print(__file__, 'setCellValues')
             for index in range(mesh.nCells):
-                for cmpt in range(dimensions):
-                    values[index][cmpt] = cellValuesData[index][cmpt]
+                values[index] = cellValuesData[index]
         return values
+
+    @classmethod
+    def initBoundaryValues(self, mesh, dimensions):
+
+        # Initialise boundary array
+        boundaryValues = \
+            np.zeros((mesh.boundaryFaceNb, dimensions), dtype=float)
+
+        return boundaryValues
 
     #This is brute force approach. Should be done more efficiently!
     def makeFacesInterpolationMolecule(self) -> list[int]:

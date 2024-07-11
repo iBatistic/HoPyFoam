@@ -1,0 +1,4 @@
+#!/bin/bash
+
+rm -rf case.*
+rm -rf errors.txt relErrorConvergence.png absErrorConvergence.png

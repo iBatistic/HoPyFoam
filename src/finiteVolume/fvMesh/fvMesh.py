@@ -55,6 +55,10 @@ class fvMesh(polyMesh):
         return self._Cf
 
     @property
+    def V(self) -> np.ndarray:
+        return self._V
+
+    @property
     def nf(self) -> np.ndarray:
         return self._Sf/self._magSf
 
@@ -236,7 +240,6 @@ class fvMesh(polyMesh):
                         [f.next_point(pointi)],
                         [faceCentre],
                         [Cestimated[self._neighbour[facei]]]])
-
 
                     tet = tetrahedron(tetPoints)
 

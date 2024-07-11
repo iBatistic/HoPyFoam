@@ -1,0 +1,5 @@
+#!/bin/bash
+
+# Create mesh
+gmsh -3 -format msh2 mesh.geo
+gmshToFoam mesh.msh

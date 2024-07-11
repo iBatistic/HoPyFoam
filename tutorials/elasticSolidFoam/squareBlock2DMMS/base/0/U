@@ -23,13 +23,13 @@ boundaryField
 {
     bottom
     {
-        type            solidTraction;
+        type            fixedValue;
         value	        uniform (0 0 0);
     }
 
     top
     {
-        type            solidTraction;
+	type            fixedValue;
         value	        uniform (0 0 0);
     }
 
@@ -41,18 +41,18 @@ boundaryField
 
     right
     {
-        type            solidTraction;
-        value	        uniform (0 -2 0);
+        type            fixedValue;
+        value	        uniform (0 0 0);
+    }
+
+    back
+    {
+        type            empty;
     }
 
     front
     {
-        type            empty;
-    }
-    
-    back
-    {
-        type            empty;
+	type            empty;
     }
 }
 

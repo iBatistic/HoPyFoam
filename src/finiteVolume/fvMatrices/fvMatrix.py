@@ -21,7 +21,7 @@ class fvMatrix():
         self._psi = psi
 
     @classmethod
-    def construct(self, psi, operatorName, gamma):
+    def construct(self, psi, operatorName, gamma=None):
 
         source, A = self.defineMatrix(psi, operatorName, gamma)
 
@@ -61,6 +61,9 @@ class fvMatrix():
         # vector or scalar value for each cell
         dim = self._psi._dimensions
         self._psi._cellValues = [sol[i:i + dim].tolist() for i in range(0, len(sol), dim)]
+
+        # Evaluate boundary values
+        self._psi.evaluateBoundary()
 
     # Adding two fvMatrices
     def __add__(self, other):

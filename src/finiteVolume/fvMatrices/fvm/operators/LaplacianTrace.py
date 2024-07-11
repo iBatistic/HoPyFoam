@@ -68,7 +68,7 @@ class LaplacianTrace():
                 gpW = faceGaussPointsAndWeights[0][i]
 
                 # Gauss point interpolation coefficient vector for each neighbouring cell
-                cx = psi.LRE().coeffs()[faceI][i]
+                cx = psi.LRE().gradCoeffs()[faceI][i]
 
                 # Loop over Gauss point interpolation stencil and add
                 # stencil cells contribution to matrix
@@ -110,7 +110,6 @@ class LaplacianTrace():
         A.assemble()
         source.assemble()
 
-        # A.view(PETSc.Viewer("APETSc.mat", 'w'))
         return source, A
 
 class LaplacianTraceBoundaryConditions(LaplacianTrace):
@@ -158,7 +157,7 @@ class LaplacianTraceBoundaryConditions(LaplacianTrace):
                 gpW = faceGaussPointsAndWeights[0][i]
 
                 # Gauss point interpolation coefficient vector for each neighbouring cell
-                cx = psi.LRE().coeffs()[faceI][i]
+                cx = psi.LRE().gradCoeffs()[faceI][i]
 
                 # Loop over Gauss point interpolation stencil and add
                 # stencil cells contribution to matrix

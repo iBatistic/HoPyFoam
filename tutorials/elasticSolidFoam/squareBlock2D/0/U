@@ -36,21 +36,16 @@ boundaryField
     left
     {
         type            fixedValue;
-	value	        uniform (0 0 0);
+        value	        uniform (0 0 0);
     }
 
     right
     {
         type            solidTraction;
-        value	        uniform (0 -2 0);
+        value	        uniform (1e6 0 0);
     }
 
-    front
-    {
-        type            empty;
-    }
-    
-    back
+    frontAndBackPlanes
     {
         type            empty;
     }

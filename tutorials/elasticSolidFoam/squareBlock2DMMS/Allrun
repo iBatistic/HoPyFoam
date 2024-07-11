@@ -1,0 +1,44 @@
+#!/bin/bash
+
+SUFFIX="case"
+BASE="base"
+
+if [[ -d "${SUFFIX}.1" ]]
+then
+    echo "Case ${SUFFIX}.1 already exists: please remove it"; echo
+    exit 1;
+fi
+
+# Data file for errors
+touch "errors.txt"
+
+# Run cases
+for i in `seq 1 5`;
+do
+    CASE="${SUFFIX}.$i"
+
+    # Copy template case
+    cp -r "${BASE}" "${CASE}"
+
+    # Enter the case
+    cd "${CASE}"
+
+    # Copy mesh from meshes directory
+    tar -xf ../base/meshes/polyMesh.${i}.tar.xz -C constant/
+
+    # Run the case
+    echo "Running case ${i}"
+    ./Allrun > /dev/null 2>&1
+
+    # Extract errors
+    echo "$(cat "errors.dat")" >> ../errors.txt
+
+    # Navigate back to the parent directory
+    cd ..
+done
+
+# Plot relative error convergence
+python plotRelError.py
+
+# Plot absolute error convergence
+python plotAbsError.py

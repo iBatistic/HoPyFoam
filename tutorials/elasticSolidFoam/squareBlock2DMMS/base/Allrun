@@ -1,6 +1,6 @@
 #!/bin/bash
 
-solversFolder="../../../applications/solvers"
+solversFolder="../../../../applications/solvers"
 solver="elasticSolidFoam.py"
 
 # Source OpenFOAM for mesh generation and postProcessing options
@@ -18,9 +18,10 @@ fi
 
 ./Allclean
 
-python3 $solversFolder/$solver
+echo "Calculating and writing body force to bodyForce.dat file"
+python3 bodyForce.py > /dev/null 2>&1
 
-postProcess -func sample -time 1.0 > /dev/null 2>&1
+python3 $solversFolder/$solver
 
 echo "Calculating absolute and relative error, see errors.dat"
 python3 errors.py > /dev/null 2>&1

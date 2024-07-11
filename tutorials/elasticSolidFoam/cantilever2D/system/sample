@@ -1,0 +1,76 @@
+/*
+ _____     _____     _____ _____ _____ _____    |  High-order Python FOAM
+|  |  |___|  _  |_ _|   __|     |  _  |     |   |  Python Version: 3.10
+|     | . |   __| | |   __|  |  |     | | | |   |  Code Version: 0.0
+|__|__|___|__|  |_  |__|  |_____|__|__|_|_|_|   |  License: GPLv3
+                |___|
+*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    object      sampleDict;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+type sets;
+
+// Set output format
+setFormat raw;
+
+// Surface format
+surfaceFormat vtk;
+
+// interpolationScheme. choice of
+//      cell          : use cell-centre value only; constant over cells
+//                      (default)
+//      cellPoint     : use cell-centre and vertex values
+//      cellPointFace : use cell-centre, vertex and face values.
+//      pointMVC      : use point values only (Mean Value Coordinates)
+//      cellPatchConstrained : like 'cell' but uses cell-centre except on
+//                             boundary faces where it uses the boundary value.
+//                             For use with e.g. patchCloudSet.
+// 1] vertex values determined from neighbouring cell-centre values
+// 2] face values determined using the current face interpolation scheme
+//    for the field (linear, gamma, etc.)
+interpolationScheme cellPoint;
+
+// Fields to sample.
+fields
+(
+    U
+);
+
+sets
+(
+    endPoint
+    {
+        type    cloud;
+        axis    xyz;
+        points  ((50 0 0.5));
+    }
+/*
+    patchPoints
+    {
+        // Sample nearest points on selected patches. Looks only up to
+        // maxDistance away. Any sampling point not found will get value
+        // pTraits<Type>::max (usually VGREAT)
+        // Use with interpolations:
+        // - cell (cell value)
+        // - cellPatchConstrained (boundary value)
+        // - cellPoint (interpolated boundary value)
+        type        patchCloud;
+        axis        xyz;
+        points      ((50 0 0));
+        maxDistance 1e-3;    // maximum distance to search
+        patches     (right);
+    }
+*/
+);
+
+surfaces
+(
+);
+
+
+// *********************************************************************** //

@@ -41,29 +41,31 @@ and owner of the OPENFOAM® and OpenCFD® trade marks.
 
 ### Tutorials
 
-- __`1D_LaplacianFoam`__
+- __`laplacianFoam1D`__
 
-    - __`1D_heatConduction.py`__   
+    - __`heatConduction.py`__   
         Python script for 1D heat conduction with linear temperature profile.
 
-    - __`1D_heatConduction_MMS.py`__
-        Python script for 1D heat conduction with variable source term and analytical solution obtained using MMS.
+    - __`heatConductionMMS.py`__  
+        Python script for 1D heat conduction with variable source term obtained using MMS.
 
-- __`LaplacianFoam`__
+- __`laplacianFoam`__
 
-    - __`example_1`__
-        Laplace equation for 2D square domain (1 x 1 m), left and right patches have value of 1, top and bottom patches are zero gradient.
+    - __`squareBlock2D `__   
+        Laplace equation solved on 2D square domain ($1 x 1$ m), left and right patches have values of  $0$ and $1$, top and bottom patches are zero gradient.
 
-    - __`example_2 `__
-        The laplace equation for 2D square domain (1 x 1 m)  with analytical solution from "_I do like CFD, VOL.1, Katate Masatsuka, edition II_"
-        page 222, solution c.
-        - `example_2/tet`  tetrahedral mesh, coarse and fine mesh available
-        - `example_2/hex`  hexahedral discretisation using `blockMesh`
-        
  - __`elasticSolidFoam`__
 
-    - __`cantilever2D`__
-        Rectangular beam 2 x 0:1 m with a Young’s modulus of 200 GPa and a Poisson’s ration of 0.3. The beam is fixed on the left boundary,
-        and a uniform distributed traction of 1 MPa is applied to the right boundary; the top and bottom boundaries are traction-free.  
+    - __`cantilever2D`__  
+        Rectangular beam $50 x 2$ m with a Young’s modulus of $30000$ Pa and a Poisson’s ration of $0.3$. The beam is fixed on the left boundary,
+        and a uniform distributed traction of $(0,-2,0)$ Pa is applied to the right boundary; the top and bottom boundaries are traction-free.
+        Example is taken from: _Demirdžić, I. "A fourth-order finite volume method for structural analysis." Applied Mathematical Modelling, 2016._
         
-
+    - __`squareBlock2D`__   
+        2D square domain ($1 x 1$ m), left patch fixed, top and bottom are traction-free. The right patch have prescribed traction in $x$ direction. Poisson's value is $0$ resulting in linear distribution of displacement field.
+    
+    - __`squareBlock2DMMS`__  
+        2D square domain ($1 x 1$ m), all patches have zero displacement. Body force calculated according to expected solution.  Example is taken from: 
+        _Aycock, Kenneth I., Nuno Rebelo, and Brent A. Craven. "Method of manufactured solutions code verification of elastostatic solid mechanics problems in a commercial finite element solver."  Computers & Structures, 2020._
+    
+        

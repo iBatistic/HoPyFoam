@@ -9,6 +9,8 @@ Description
 """
 import re
 import sys
+import warnings
+
 import numpy as np
 
 CONSTANT = 'constant/'
@@ -456,8 +458,10 @@ def readVectorField(fileName, time=ZERO) -> tuple[str, list, dict]:
             # Remove dimensions line and internalField(initial field value) line, pass boundaryField line
             for line in file:
                 if line.startswith('internalField'):
-                    initialValue = [float(s.strip('()')) for s in line.strip().split()[-3:]]
                     valueType = line.strip().split()[1]
+                    if(valueType == 'uniform'):
+                        initialValue = [float(s.strip('()')) for s in line.strip().split()[-3:]]
+
                 elif line.startswith('dimensions'):
                     dataType = line.strip()
                 elif line.startswith('boundaryField'):
@@ -467,34 +471,47 @@ def readVectorField(fileName, time=ZERO) -> tuple[str, list, dict]:
 
             # This part of code reads nonuniform cell field
             if valueType == 'nonuniform':
-                print("nonuniform vector field parser not implemented", __file__)
-
+                fieldSize = int(file[2])
+                cellValues =  [np.zeros(3) for _ in range(fieldSize)]
+                for i in range(fieldSize):
+                    vector = file[4 + i].strip('( )').split()
+                    cellValues[i] = np.array([float(vector[0]), float(vector[1]), float(vector[2])])
+                file = file[4+fieldSize+1:]
             elif valueType == 'uniform':
                 cellValues[0] = initialValue
             else:
                 raise SyntaxError(f'Value type should be unifrom or nonuniform, type is {dataType}')
 
-            # Read boundary conditions
-            file = ''.join(data)
-            file = re.sub(r'^\{(.*)\}$', r'\1', file)
+            if (valueType == 'nonuniform'):
+                warnings.warn(f"Boundary condition reader not implemented "
+                            f" for non-uniform boundary fields. Value from 0 will be"
+                            f" taken", stacklevel=3)
 
-            # Extract data inside curly brackets
-            patchDicts = re.findall(r'\{([^}]+)\}', file)
+                boundaryConditionsDict = readVectorField('U', '0')[2]
 
-            # Extract patch name above curly brackets
-            patchNames = re.sub(r'{[^}]*}*', ' ', file)
-            patchNames = patchNames.split()
+            else:
+                # Read boundary conditions
+                file = ''.join(data)
+                file = re.sub(r'^\{(.*)\}$', r'\1', file)
 
-            for i in range(len(patchNames)):
-                patchDict = patchDicts[i].split()
+                # Extract data inside curly brackets
+                patchDicts = re.findall(r'\{([^}]+)\}', file)
 
-                if (patchDict[1] == 'empty'):
-                    boundaryConditionsDict.update({patchNames[i]: {"type": patchDict[1]}})
-                else:
-                    value = [float(s.strip('()')) for s in patchDict[4:]]
-                    boundaryConditionsDict.update({patchNames[i]: \
-                                                       {"type": patchDict[1],
-                                                       patchDict[2]: {patchDict[3]: value}}})
+                # Extract patch name above curly brackets
+                patchNames = re.sub(r'{[^}]*}*', ' ', file)
+                patchNames = patchNames.split()
+
+                for i in range(len(patchNames)):
+                    patchDict = patchDicts[i].split()
+
+                    if (patchDict[1] == 'empty'):
+                        boundaryConditionsDict.update({patchNames[i]: {"type": patchDict[1]}})
+                    else:
+                        #pass
+                        value = [float(s.strip('()')) for s in patchDict[4:]]
+                        boundaryConditionsDict.update({patchNames[i]: \
+                                                           {"type": patchDict[1],
+                                                           patchDict[2]: {patchDict[3]: value}}})
 
     except SyntaxError as e:
         print(f'Syntax error: {e}')

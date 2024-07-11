@@ -68,7 +68,7 @@ class LaplacianTranspose():
                 gpW = faceGaussPointsAndWeights[0][i]
 
                 # Gauss point interpolation coefficient vector for each neighbouring cell
-                cx = psi.LRE().coeffs()[faceI][i]
+                cx = psi.LRE().gradCoeffs()[faceI][i]
 
                 # Loop over Gauss point interpolation stencil and add
                 # stencil cells contribution to matrix
@@ -158,7 +158,7 @@ class LaplacianTransposeBoundaryConditions(LaplacianTranspose):
                 gpW = faceGaussPointsAndWeights[0][i]
 
                 # Gauss point interpolation coefficient vector for each neighbouring cell
-                cx = psi.LRE().coeffs()[faceI][i]
+                cx = psi.LRE().gradCoeffs()[faceI][i]
 
                 # Loop over Gauss point interpolation stencil and add
                 # stencil cells contribution to matrix
@@ -199,5 +199,3 @@ class LaplacianTransposeBoundaryConditions(LaplacianTranspose):
 
                         value = np.dot(tenValue, prescribedValue)
                         source.setValues(range(cellP * psi.dim, cellP * psi.dim + psi.dim), -value, ADD)
-
-

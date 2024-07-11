@@ -24,7 +24,7 @@ class volVectorField(volField):
     # Field dimensions
     _dimensions = 3
 
-    def __init__(self, fieldName, mesh, vectorFieldEntries, N=3, Nn=16, GpNb=7):
+    def __init__(self, fieldName, mesh, vectorFieldEntries, N=3, Nn=20, GpNb=7):
 
         # Initialise volField
         super().__init__(fieldName, mesh, vectorFieldEntries, N, Nn, GpNb)
@@ -67,15 +67,21 @@ class volVectorField(volField):
                 patchType = self._boundaryConditionsDict[patch]['type']
                 file.write(f'\t{patch}\n\t{{\n\t\ttype\t{patchType};\n')
 
+                boundary = self._mesh._boundary
+                nInternalFaces = self._mesh.nInternalFaces
+                startFace = boundary[patch]['startFace']
+                nFaces = boundary[patch]['nFaces']
+
                 if patchType == 'fixedValue':
                     value = self._boundaryConditionsDict[patch]['value']['uniform']
                     file.write(f'\t\tvalue\tuniform ({" ".join(str(x) for x in value)});\n')
 
                 if patchType == 'solidTraction':
-                    warnings.warn(f"Displacement values at solidTraction patches are not\n "
-                                  f" written. This can mess up postprocessing in paraview."
-                                  f" Use only cell values for visualisation.\n",
-                                  stacklevel=3)
+                    file.write(f'\t\tvalue\tnonuniform List<vector>\n{nFaces}\n(\n')
+                    for i in range(nFaces):
+                        faceI = startFace + i - nInternalFaces
+                        file.write(f'({" ".join(str(x) for x in self._boundaryValues[faceI])}) \n')
+                    file.write(")\n;\n")
 
                 file.write(f'\t}}\n')
 

@@ -14,6 +14,9 @@ __all__ = ['localRegressionEstimator']
 import numpy as np
 import os
 import sys
+import math
+import warnings
+import matplotlib.pyplot as plt
 
 from src.foam.decorators import timed
 
@@ -28,14 +31,14 @@ class localRegressionEstimator():
         self._mesh = mesh
 
         # Gauss faces points LRE coefficients
-        self._cx, self._cy, self._cz = self.makeCoeffs(volField, mesh)
+        self._c, self._cx, self._cy, self._cz = self.makeCoeffs(volField, mesh, "QR")
 
         # Gauss faces points final interpolation coefficients, assembled using cx,cy and cz
         # Each item in list is corresponding face, each face has sublist of Gauss points
         # Each Gauss point has interpolation vector (cx, cy, cz)
-        self._c = self.makeCoeffsVector()
+        self._C = self.makeCoeffsVector()
 
-    # Return coeffs vector cx for each Gauss points
+    # Return gradCoeffs vector cx for each Gauss points
     def makeCoeffsVector(self):
 
         coeffs = [[[] for i in range (self._volField._GaussPointsNb)] for x in range(self._mesh.nFaces)]
@@ -49,11 +52,14 @@ class localRegressionEstimator():
                          self._cz[faceI][point][cellN]]))
         return coeffs
 
+    def gradCoeffs(self):
+        return self._C
+
     def coeffs(self):
         return self._c
 
     @timed
-    def makeCoeffs(self, volField, mesh) -> list[list[np.ndarray]]:
+    def makeCoeffs(self, volField, mesh, method) -> list[list[np.ndarray]]:
 
         # File to write data for debug
         fileName = "LRE_coeffs.debug.txt"
@@ -72,9 +78,13 @@ class localRegressionEstimator():
         Np = volField.Np
 
         # Coefficient for each face interpolation molecule
+        c =  [[] for x in range(mesh.nFaces)]
         cx = [[] for x in range(mesh.nFaces)]
         cy = [[] for x in range(mesh.nFaces)]
         cz = [[] for x in range(mesh.nFaces)]
+
+        # List of matrix M condition numbers
+        condNumbers = []
 
         # Face Gauss points
         facesGaussPoints = [sublist[1] for sublist in volField._facesGaussPointsAndWeights]
@@ -104,11 +114,14 @@ class localRegressionEstimator():
 
                     # Taylor series terms calculated using nested for loops
                     N = volField.N
+
+                    # Scaling factor
+                    h = 2.0 * rs
                     pos = int(0)
                     for I in range(N+1):
                         for J in range(N-I+1):
                             fact = np.math.factorial(I) * np.math.factorial(J)
-                            Q[pos, i] = pow(neiC[0]-gpI[0], I) * pow(neiC[1]-gpI[1], J) * (1.0/fact)
+                            Q[pos, i] = pow(neiC[0]-gpI[0], I) * pow(neiC[1]-gpI[1], J) * (1.0/fact)# * (1/pow(h,I+J))
                             pos += 1;
 
                 # Loop over neighbours Nn and construct matrix W (diagonal matrix)
@@ -121,10 +134,11 @@ class localRegressionEstimator():
                 if(faceI >= mesh.nInternalFaces):
                     facePatchType = mesh.facePatchType(faceI, self._volField)
 
-                    if(facePatchType == 'empty'):
+                    if (facePatchType == 'empty'):
                         # Save some time by skipping calculations on empty faces
                         # Fill coefficient vectors with zeros to later on avoid having problem
                         # when looping through list
+                        c[faceI].append([0.0 for _ in range(volField.Nn)])
                         cx[faceI].append([0.0 for _ in range(volField.Nn)])
                         cy[faceI].append([0.0 for _ in range(volField.Nn)])
                         cz[faceI].append([0.0 for _ in range(volField.Nn)])
@@ -139,32 +153,69 @@ class localRegressionEstimator():
                 diagonal_indices = np.diag_indices(W.shape[0])
                 W[diagonal_indices] = w_diag
 
-                # Calculate matrix M = Q*W*Q^T
-                M = Q @ W @ Q.T
+                if (method == "INV"):
+                    # Calculate matrix M = Q*W*Q^T
+                    M = Q @ W @ Q.T
 
-                if (M.shape[0] != M.shape[1] | M.shape[0] == Np):
-                    raise ValueError("Matrix M should be Np x Np shape. Something went wrong!")
+                    if (M.shape[0] != M.shape[1] | M.shape[0] == Np):
+                        raise ValueError("Matrix M should be Np x Np shape. Something went wrong!")
 
-                # Calculate matrix A = M^-1*Q*W
-                # Depending on condition number choose pinv or inv
-                if np.linalg.cond(M) < 1e6:
-                    # Matrix is not close to singular, use np.linalg.inv()
-                    A = np.linalg.inv(M) @ Q @ W
+                    # Calculate matrix A = M^-1*Q*W
+                    # Depending on condition number choose pinv or inv
+                    condNumber = np.linalg.cond(M)
+                    if condNumber < 1e5:
+                        # Matrix is not close to singular, use np.linalg.inv()
+                        A = np.linalg.inv(M) @ Q @ W
+                    else:
+                        # Matrix is close to singular, use np.linalg.pinv()
+                        A = np.linalg.pinv(M) @ Q @ W
+
+                elif (method == "QR"):
+
+                    Qhat = Q @ np.diag(np.sqrt(np.diag(W)))
+
+                    # Perform QR decomposition
+                    O, R = np.linalg.qr(Qhat.T, mode='reduced')
+
+                    Bhat = np.diag(np.sqrt(np.diag(W))) @ np.eye(len(w_diag))
+
+                    Rbar = R[:Np, :Np]
+                    Qbar = O[:, :Np]
+
+                    # In numpy there is no canonical way to compute the inverse
+                    # of an upper triangular matrix.
+                    A = np.linalg.solve(Rbar, Qbar.T @ Bhat)
+
+                    condNumber = np.linalg.cond(Rbar)
                 else:
-                    # Matrix is close to singular, use np.linalg.pinv()
-                    A = np.linalg.pinv(M) @ Q @ W
+                    print("Invalid method for matrix A calculation")
+                    sys.exit(1)
+
+
+                if condNumber > 1e12:
+                    warnings.warn(f"At least one face with large condition number (>1e12) detected\n "
+                                  f"This will mess up results. Terminating calculation...\n", stacklevel=3)
+
 
                 # Interpolation coefficients for the current Gauss point
                 # With above for loop Taylor expression looks like:
                 # 1, (y-b), (y-b)^2, (x-a), (x-a)(x-b), (x-a)^2
+                c[faceI].append(list(A[0, :]))
                 cx[faceI].append(list(A[1+N, :]))
                 cy[faceI].append(list(A[1, :]))
                 cz[faceI].append([0.0 for _ in range(len(list(A[1, :])))])
 
-                # Write matrices to textual file, so they can be checked
-                self.writeData(faceI, gpI, Q, W, M, A, fileName)
+                # Store Gauss point condition number
+                condNumbers.append(condNumber)
 
-        return cx, cy, cz
+                # Used for debugging
+                # Write matrices to textual file, so they can be checked
+                #self.writeData(faceI, gpI, Q, W, volField._facesInterpolationMolecule[faceI], condNumber, M, A, fileName)
+
+        # Plot distribution of condition number
+        plotCondNumbers(condNumbers)
+
+        return c, cx, cy, cz
 
     # Radially symmetric exponential function
     @classmethod
@@ -182,7 +233,7 @@ class localRegressionEstimator():
         return w
 
     @classmethod
-    def writeData(self, faceI, gpI, Q, W, M, A, fileName):
+    def writeData(self, faceI, gpI, Q, W, mol, condNumber, M, A, fileName):
 
         np.set_printoptions(precision=5)
         np.set_printoptions(linewidth=np.inf)
@@ -196,8 +247,25 @@ class localRegressionEstimator():
 
         file.write(f'Face number: {faceI} \n')
         file.write(f'Gauss point: {gpI} \n')
+        file.write(f'Interpolation molecule: {mol} \n')
+        file.write(f'Neigbours centres: {neis} \n')
         file.write(f"Matrix Q:\n {Q}\n")
         file.write(f"Matrix W:\n {W}\n")
         file.write(f"Matrix M:\n {M}\n")
+        file.write(f"Matrix M condition number:\n {condNumber}\n")
         file.write(f"Matrix A:\n {A}\n \n")
         file.close()
+
+def plotCondNumbers(condNumbers):
+    # Plot a histogram to visualize the distribution of condition numbers
+    plt.figure(figsize=(10, 6))
+    plt.hist(condNumbers, bins=50, edgecolor='black', alpha=0.7)
+    plt.suptitle('Distribution of Matrix M Condition Numbers')
+    plt.title('Data is divided into 50 bins', fontsize=8)
+    plt.xlabel('Condition Number')
+    plt.ylabel('Frequency')
+    plt.yscale('log')
+    plt.grid(True)
+    figure = plt.gcf()
+    figure.savefig("conditionNumbers.png", dpi=100)
+    plt.close(figure)

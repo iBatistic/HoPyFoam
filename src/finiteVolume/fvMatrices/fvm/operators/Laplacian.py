@@ -82,7 +82,7 @@ class Laplacian():
                 gpW = faceGaussPointsAndWeights[0][i]
 
                 # Gauss point interpolation coefficient vector for each neighbouring cell
-                cx = psi.LRE().coeffs()[faceI][i]
+                cx = psi.LRE().gradCoeffs()[faceI][i]
 
                 # Loop over Gauss point interpolation stencil and add
                 # stencil cells contribution to matrix
@@ -170,7 +170,7 @@ class Laplacian():
                 gpW = faceGaussPointsAndWeights[0][i]
 
                 # Gauss point interpolation coefficient vector for each neighbouring cell
-                cx = psi.LRE().coeffs()[faceI][i]
+                cx = psi.LRE().gradCoeffs()[faceI][i]
 
                 # Loop over Gauss point interpolation stencil and add
                 # stencil cells contribution to matrix
@@ -207,20 +207,6 @@ class Laplacian():
         # Assemble the matrix and the RHS vector
         A.assemble()
         source.assemble()
-
-        # A.convert('dense')
-        # test= A.getDenseArray()
-        # np.set_printoptions(precision=2, suppress=True)
-        # wr= [test[i:i + 1].tolist() for i in range(0, len(test), 1)]
-        #
-        # for item in wr:
-        #     print(np.array(item))
-
-        #A.view()
-        #source.view()
-        #array_A = A.convert('dense')
-        #output_file = "Laplacianmatrix.txt"
-        #np.savetxt(output_file, array_A, fmt='%0.2f')
 
         return source, A
 
@@ -290,7 +276,7 @@ class LaplacianBoundaryConditions(Laplacian):
                 gpW = faceGaussPointsAndWeights[0][i]
 
                 # Gauss point interpolation coefficient vector for each neighbouring cell
-                cx = psi.LRE().coeffs()[faceI][i]
+                cx = psi.LRE().gradCoeffs()[faceI][i]
 
                 # Loop over Gauss point interpolation stencil and add
                 # stencil cells contribution to matrix
@@ -302,7 +288,7 @@ class LaplacianBoundaryConditions(Laplacian):
                     if (psi.dim == 1):
                         A.setValues(cellP, cellIndex, scalarVal, ADD)
                     else:
-                        # Tensor coeffs in case of vector field
+                        # Tensor gradCoeffs in case of vector field
                         tenValue = scalarVal * np.array([[1, 0, 0],
                                                          [0, 1, 0],
                                                          [0, 0, 1]], dtype=PETSc.ScalarType)
@@ -315,57 +301,3 @@ class LaplacianBoundaryConditions(Laplacian):
                         # Its contribution is added last, after cell centres
                         value = gammaMagSf * gpW * (cx[j + 1] @ nf) * prescribedValue
                         source.setValues(range(cellP * psi.dim, cellP * psi.dim + psi.dim), -value, ADD)
-
-    # Only implemented for scalar field, for example_2 boundary conditions
-    def analyticalFixedValue(self, psi, mesh, source, A, patch, gamma):
-
-        # Preliminaries
-        startFace = mesh.boundary[patch]['startFace']
-        nFaces = mesh.boundary[patch]['nFaces']
-
-        GaussPointsAndWeights = psi._facesGaussPointsAndWeights
-        owner = mesh._owner
-
-        # Loop over patch faces
-        for faceI in range(startFace, startFace + nFaces):
-
-            # Diffusivity coefficient multiplied with face magnitude
-            gammaMagSf = mesh.magSf[faceI] * gamma
-
-            # Face normal
-            nf = mesh.nf[faceI]
-
-            # List of face Gauss points [1] and weights [0]
-            faceGaussPointsAndWeights = GaussPointsAndWeights[faceI]
-
-            # Current face points interpolation stencil
-            faceStencil = psi._facesInterpolationMolecule[faceI]
-
-            # Loop over Gauss points
-            for i, gp in enumerate(faceGaussPointsAndWeights[1]):
-
-                # Gauss point gp weight
-                gpW = faceGaussPointsAndWeights[0][i]
-
-                # Gauss point interpolation coefficient vector for each neighbouring cell
-                cx = psi.LRE().coeffs()[faceI][i]
-
-                # Loop over Gauss point interpolation stencil and add
-                # stencil cells contribution to matrix
-                for j, cellIndex in enumerate(faceStencil):
-
-                    cellP = owner[faceI]
-                    value = gammaMagSf * gpW * (cx[j] @ nf)
-                    A.setValues(cellP, cellIndex, value, addv=PETSc.InsertMode.ADD_VALUES)
-
-                    if (j == len(faceStencil) - 1):
-
-                        # Hard-coded value at boundary
-                        x = gp[0]
-                        y = gp[1]
-                        presribedValue = np.sin(5*y) * np.exp(5*x)
-
-                        value = gammaMagSf * gpW * (cx[j+1] @ nf) * presribedValue
-                        # Boundary face centre is not included in face stencil list
-                        # Its contribution is added last, after cell centres
-                        source.setValue(cellP, - value, ADD)

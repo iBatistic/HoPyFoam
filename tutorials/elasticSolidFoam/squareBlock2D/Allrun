@@ -18,9 +18,10 @@ fi
 
 ./Allclean
 
+#blockMesh > /dev/null 2>&1
+
+# Fluent mesh to OF format
+fluentMeshToFoam tri_coarse.msh  > /dev/null 2>&1
+#fluentMeshToFoam tri_fine.msh
+
 python3 $solversFolder/$solver
-
-postProcess -func sample -time 1.0 > /dev/null 2>&1
-
-echo "Calculating absolute and relative error, see errors.dat"
-python3 errors.py > /dev/null 2>&1

@@ -10,22 +10,44 @@ FoamFile
     version     2.0;
     format      ascii;
     class       dictionary;
-    location    "constant";
-    object      mechanicalProperties;
+    object      fvSchemes;
 }
-// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-planeStress        yes;
+d2dt2Schemes
+{
+    default            none;
+}
 
-mechanical
-(
-    steel
-    {
-        type            linearElastic;
-        rho             rho [1 -3 0 0 0 0 0] 7800;
-        E               E [1 -1 -2 0 0 0 0] 30000;
-        nu              nu [0 0 0 0 0 0 0] 0.3;
-    }
-);
+ddtSchemes
+{
+    default            none;
+}
+
+gradSchemes
+{
+    default            none;
+}
+
+divSchemes
+{
+    default            none;
+}
+
+laplacianSchemes
+{
+    default            none;
+}
+
+snGradSchemes
+{
+    default            none;
+}
+
+interpolationSchemes
+{
+    default            none;
+}
+
+// ************************************************************************* //
 
 // ************************************************************************* //

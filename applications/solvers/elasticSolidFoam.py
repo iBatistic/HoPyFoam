@@ -32,12 +32,15 @@ args = arg_parser().parse_args()
 
 # Read and construct mesh, construct interpolation stencil
 mesh = fvMesh()
+
 solControl = solutionControl()
 
 # Initialise displacement vector field U
 # N is interpolation order, Nn is number of cells in face stencil and GpNb
 # is number of Gauss points per face
-U = volVectorField("U", mesh, readVectorField("U"),  N=3, Nn=16, GpNb=7)
+#U = volVectorField("U", mesh, readVectorField("U"),  N=3, Nn=20, GpNb=7)
+#U = volVectorField("U", mesh, readVectorField("U"),  N=2, Nn=16, GpNb=7)
+U = volVectorField("U", mesh, readVectorField("U"),  N=1, Nn=13, GpNb=7)
 
 # Read mechanichalProperties dict to get first and second Lame parameters
 mu, lam = readMechanicalProperties()
@@ -50,8 +53,9 @@ while (solControl.loop()):
     laplacian = fvm.construct(U, 'Laplacian', mu)
     laplacianTranspose = fvm.construct(U, 'LaplacianTranspose', mu)
     laplacianTrace = fvm.construct(U, 'LaplacianTrace', lam)
+    bodyForce = fvm.construct(U, 'bodyForce')
 
-    Matrix = laplacian + laplacianTranspose + laplacianTrace
+    Matrix = laplacian + laplacianTranspose + laplacianTrace + bodyForce
 
     # Solve system matrix
     Matrix.solve()

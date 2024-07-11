@@ -22,9 +22,6 @@ class volFieldBoundaryConditions():
             w_diag[-1] = 1.0
             Q[0][-1] = 1.0
 
-        def analyticalFixedValue(w_diag, Q):
-            volFieldBoundaryConditions.LREcoeffs.fixedValue(w_diag, Q)
-
         def empty(w_diag, Q):
             pass
 
@@ -34,13 +31,21 @@ class volFieldBoundaryConditions():
         def solidTraction(w_diag, Q):
             pass
 
-    # Evaluate will be used in future to set values at boundaries after
+    # Evaluate is used to calculate values at boundaries after
     # cell centred values are calculated
     class evaluate:
 
-        def fixedValue(mesh, patchName, patchValue, boundaryValues, dimensions):
+        def empty(*args):
+            pass
+
+        def zeroGradient(*args):
+            pass
+
+        def fixedValue(psi, mesh, bdDict, patchName, boundaryValues):
             boundary = mesh._boundary
             nInternalFaces = mesh.nInternalFaces
+
+            patchValue = bdDict[patchName]['value']['uniform']
 
             for patch in boundary:
                 if patch == patchName:
@@ -49,14 +54,34 @@ class volFieldBoundaryConditions():
 
                     for faceI in range(nFaces):
                         bIndex = startFace + faceI - nInternalFaces
-                        for cmpt in range(dimensions):
-                            boundaryValues[cmpt][bIndex] = patchValue#[cmpt]
+                        boundaryValues[bIndex] = patchValue
 
-        def analyticalFixedValue(mesh, patchName, patchValue, boundaryValues, dimensions):
-            volFieldBoundaryConditions.evaluate.fixedValue(mesh, patchName, patchValue, boundaryValues, dimensions)
+        def solidTraction(psi, mesh, bdDict, patchName, boundaryValues):
+            boundary = mesh._boundary
+            nInternalFaces = mesh.nInternalFaces
+            GaussPointsAndWeights = psi._facesGaussPointsAndWeights
 
-        def empty(mesh, patchName, patchValue, boundaryValues, dimensions):
-            pass
+            for patch in boundary:
+                if patch == patchName:
+                    startFace = boundary[patch]['startFace']
+                    nFaces = boundary[patch]['nFaces']
 
-        def zeroGradient(mesh, patchName, patchValue, boundaryValues, dimensions):
-            pass
+                    for i in range(nFaces):
+                        faceI = startFace + i - nInternalFaces
+
+                        # List of face Gauss points [1] and weights [0]
+                        faceGaussPoints = GaussPointsAndWeights[faceI][1]
+
+                        # Current face points interpolation stencil
+                        faceStencil = psi._facesInterpolationMolecule[startFace + i]
+
+                        # One Gauss point coincide with face centre if Ng is odd
+                        # We use interpolation data of that point to calculate
+                        # displacement at boundary face centre
+                        if psi._GaussPointsNb % 2 != 0:
+                            # Gauss point interpolation coefficient vector
+                            c = psi.LRE().coeffs()[startFace + i][psi._GaussPointsNb // 2]
+
+                            for j, cellIndex in enumerate(faceStencil):
+                                boundaryValues[faceI] += np.array(psi._cellValues[cellIndex]) * c[j]
+
