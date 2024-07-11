@@ -26,7 +26,7 @@ jobs:
             chmod +x ./applications/scripts/checkFileHeader.sh
 
             if [ "$extension" == "py" ]; then
-              if [ "$(basename "$file")" != "__init__.py"]; then
+              if [ "$(basename "$file")" != "__init__.py" ]; then
                 echo "Checking: $file"
                 ./applications/scripts/checkFileHeader.sh "$file"
               fi
