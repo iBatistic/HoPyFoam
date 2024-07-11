@@ -63,5 +63,6 @@ if (os.path.exists(fileName)):
     os.remove(fileName)
 
 file = open(fileName, 'w')
+file.write(f"#nCells    relError    absError\n")
 file.write(f"{mesh.nCells}    {relError}    {absError}\n")
 file.close()
