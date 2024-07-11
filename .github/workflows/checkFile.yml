@@ -29,5 +29,6 @@ jobs:
               if [ "$(basename "$file")" != "__init__.py"]; then
                 echo "Checking: $file"
                 ./applications/scripts/checkFileHeader.sh "$file"
+              fi
             fi
           done
