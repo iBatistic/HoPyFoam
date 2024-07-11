@@ -69,3 +69,5 @@ and owner of the OPENFOAM® and OpenCFD® trade marks.
         _Aycock, Kenneth I., Nuno Rebelo, and Brent A. Craven. "Method of manufactured solutions code verification of elastostatic solid mechanics problems in a commercial finite element solver."  Computers & Structures, 2020._
     
         
+### Contact, support, and contribution information
+To contact the authors about __HoPyFOAM__, please use the issue tracker of the GitHub project. Bug reports and contributions to new features are welcome.
