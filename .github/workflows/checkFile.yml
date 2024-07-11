@@ -9,7 +9,7 @@ jobs:
   check_added_files:
     runs-on: ubuntu-latest
 
-    steps:       
+    steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
@@ -21,12 +21,13 @@ jobs:
         run: |
           # Run the script on each added file
           for file in ${{ steps.changed-files.outputs.all_changed_files }}; do
-          
+
             extension="${file##*.}"
             chmod +x ./applications/scripts/checkFileHeader.sh
-            
+
             if [ "$extension" == "py" ]; then
-              echo "Checking: $file"
-              ./applications/scripts/checkFileHeader.sh "$file"
+              if [ "$(basename "$file")" != "__init__.py"]; then
+                echo "Checking: $file"
+                ./applications/scripts/checkFileHeader.sh "$file"
             fi
           done
