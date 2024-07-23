@@ -1,4 +1,4 @@
-# HoPyFOAM  
+# ![-](HoPyFOAMLogoName.png)  
 ### FOAM like Python code for High-order Finite Volume Method
 
 __HoPyFOAM__ is an OpenFOAM-like Python package written for a high-order finite volume method.  
