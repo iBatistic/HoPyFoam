@@ -5,21 +5,21 @@
 |__|__|___|__|  |_  |__|  |_____|__|__|_|_|_|   |  License: GPLv3
                 |___|
 Description
-
+    Explicit discretisation operator
 """
 __author__ = 'Ivan Batistić & Philip Cardiff'
 __email__ = 'ibatistic@fsb.hr, philip.cardiff@ucd.ie'
 
 from src.finiteVolume.fvMatrices.fvMatrix import fvMatrix
-from src.finiteVolume.fvMatrices.fvm.operators import *
+from src.finiteVolume.fvMatrices.fvc.operators import *
 
-class fvm(fvMatrix):
+class fvc(fvMatrix):
 
     @classmethod
-    def defineMatrix(self, psi, operatorName, gamma, secondPsi):
+    def defineMatrix(self, psi, operatorName, gamma=None, secondPsi=None):
 
         # Make function for Laplacian, LaplacianTrace or LaplacianTranspose
         operator = eval(operatorName + "." + "construct")
 
         # Operator function returns A,b
-        return operator(psi, gamma)
+        return operator(psi, gamma, secondPsi)

@@ -5,8 +5,8 @@
 |__|__|___|__|  |_  |__|  |_____|__|__|_|_|_|   |  License: GPLv3
                 |___|
 Description
-    Solid solver with small strains and small rotations assumption (linear geometry).
-    Total displacement is the primary unknown.
+    Solid solver with small strains and small rotations assumption
+    (linear geometry). Total displacement is the primary unknown.
     The stress is calculated according to linear-elastic Hooke law.
 """
 __author__ = 'Ivan Batistić & Philip Cardiff'
@@ -35,12 +35,8 @@ mesh = fvMesh()
 
 solControl = solutionControl()
 
-# Initialise displacement vector field U
-# N is interpolation order, Nn is number of cells in face stencil and GpNb
-# is number of Gauss points per face
-#U = volVectorField("U", mesh, readVectorField("U"),  N=3, Nn=20, GpNb=7)
-#U = volVectorField("U", mesh, readVectorField("U"),  N=2, Nn=16, GpNb=7)
-U = volVectorField("U", mesh, readVectorField("U"),  N=1, Nn=13, GpNb=7)
+# Initialise displacement vector field U, N is interpolation order
+U = volVectorField("U", mesh, readVectorField("U"),  N=3)
 
 # Read mechanichalProperties dict to get first and second Lame parameters
 mu, lam = readMechanicalProperties()

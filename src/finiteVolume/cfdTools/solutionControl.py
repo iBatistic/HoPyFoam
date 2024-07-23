@@ -5,7 +5,7 @@
 |__|__|___|__|  |_  |__|  |_____|__|__|_|_|_|   |  License: GPLv3
                 |___|
 Description
-    Class for convergence informations and convergence checks of the
+    Class for convergence information and convergence checks of the
     solution loop.
 """
 

@@ -21,12 +21,9 @@ from src.foam.decorators import timed
 
 class volField(field, volFieldBoundaryConditions):
 
-    def __init__(self, fieldName, mesh, fieldEntries, N, Nn, GpNb):
+    def __init__(self, fieldName, mesh, fieldEntries, N):
 
         super().__init__(fieldName)
-
-        # Number of integration points per CV face
-        self._GaussPointsNb = GpNb
 
         # Order of interpolation (1 = linear, 2 = quadratic, 3 = qubic...)
         self._N = N
@@ -37,7 +34,10 @@ class volField(field, volFieldBoundaryConditions):
         self. _Np  = self.TaylorTermsNumber(self._N, mesh.twoD)
 
         # Number of cells in interpolation stencil
-        self._Nn = Nn
+        self._Nn = self.stencilSize(mesh.twoD, N)
+
+        # Number of integration points per CV face
+        self._GaussPointsNb = self.integrationPointsNb(mesh.twoD, N)
 
         # A quick check for stencil size requirement
         if (self._Np >= self._Nn):
@@ -72,6 +72,10 @@ class volField(field, volFieldBoundaryConditions):
     def Np(self) -> int:
         return self._Np
 
+    @property
+    def Ng(self) -> int:
+        return self._GaussPointsNb
+
     # Return number of neighbours for this field type
     @property
     def Nn(self) -> int:
@@ -85,18 +89,45 @@ class volField(field, volFieldBoundaryConditions):
     # Returns number of terms in Taylor expression, hard-coded
     @classmethod
     def TaylorTermsNumber(self, N, twoD) -> int:
+        """
+        Returns the number of terms in Taylor polynomial of order N.
+        """
+        TaylorTerms2D = {1: 3, 2: 6, 3: 10}
 
-        if (twoD):
-            if (N == 1):
-                return 3
-            elif (N == 2):
-                return 6
-            elif (N == 3):
-                return 10
+        if twoD:
+            if N in TaylorTerms2D:
+                return TaylorTerms2D[N]
             else:
-                ValueError("Not implemented")
+                raise ValueError(f'Taylor polynom {N} not implemented')
         else:
-            ValueError("Not implemented")
+            raise ValueError("Only 2D implemented")
+
+    @classmethod
+    def stencilSize(self, twoD: bool, N: int) -> int:
+        """
+        Returns the stencil size based on the dimensionality and the stencil
+        order.
+        """
+        stencilSize2D = {1: 14, 2: 16, 3: 20}
+
+        if twoD:
+            if N in stencilSize2D:
+                return stencilSize2D[N]
+            else:
+                raise ValueError(f'Stencil size not implemented for {N} '
+                                 'Taylor interpolation polynom')
+        else:
+            raise ValueError("Only 2D stencils are implemented")
+
+    @classmethod
+    def integrationPointsNb(self, twoD, Np) -> int:
+        """
+        Returns the number of Gauss points per CV face.
+        """
+        if twoD:
+            return 7
+        else:
+            raise ValueError("Only 2D is implemented")
 
     def evaluateBoundary(self):
 
@@ -189,7 +220,9 @@ class volField(field, volFieldBoundaryConditions):
         # If the mesh is 2D, Gauss points are calculated in one plane
         emptyDir = None
         if mesh.twoD:
-            print(f"Empty patch found, Gauss points are calculated in X-Y plane")
+            print(f"Empty patch found, Gauss points are calculated in"
+                  f" X-Y plane\n")
+
             emptyDir = 2
 
         # Loop over all faces and calculate Gauss points and weights

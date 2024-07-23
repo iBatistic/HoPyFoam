@@ -26,11 +26,11 @@ class LaplacianTranspose():
         # Read PETSc options file
         OptDB = PETSc.Options()
 
-        nblocks = nCells
+        nBlocks = nCells
         blockSize = psi._dimensions
 
         # total number of rows or columns
-        matSize = nblocks * blockSize
+        matSize = nBlocks * blockSize
 
         A = PETSc.Mat()
         A.create(comm=PETSc.COMM_WORLD)
@@ -182,7 +182,7 @@ class LaplacianTransposeBoundaryConditions(LaplacianTranspose):
                     # Store tensorial Laplace coefficients
                     A.setValuesBlocked(cellP, cellIndex, tenValue.flatten(), addv=ADD)
 
-                    if (j == len(faceStencil) - 1):
+                    if j == len(faceStencil) - 1:
                         # Boundary face centre is not included in face stencil list
                         # Its contribution is added last, after cell centres\
                         nfx = nf[0]
@@ -199,3 +199,4 @@ class LaplacianTransposeBoundaryConditions(LaplacianTranspose):
 
                         value = np.dot(tenValue, prescribedValue)
                         source.setValues(range(cellP * psi.dim, cellP * psi.dim + psi.dim), -value, ADD)
+                        

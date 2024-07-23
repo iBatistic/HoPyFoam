@@ -36,7 +36,7 @@ More details can be found in the [LICENSE](./LICENSE.txt) file.
 
 ### Disclaimer
 This offering is not approved or endorsed by OpenCFD Limited, 
-producer and distributor of the OpenFOAM software via (www.openfoam.com)[https://www.openfoam.com/}, 
+producer and distributor of the OpenFOAM software via [www.openfoam.com](https://www.openfoam.com/), 
 and owner of the OPENFOAM® and OpenCFD® trade marks.
 
 ### Tutorials
@@ -57,15 +57,15 @@ and owner of the OPENFOAM® and OpenCFD® trade marks.
  - __`elasticSolidFoam`__
 
     - __`cantilever2D`__  
-        Rectangular beam $50 x 2$ m with a Young’s modulus of $30000$ Pa and a Poisson’s ration of $0.3$. The beam is fixed on the left boundary,
+        Rectangular beam $50$ x $2$ m with a Young’s modulus of $30000$ Pa and a Poisson’s ration of $0.3$. The beam is fixed on the left boundary,
         and a uniform distributed traction of $(0,-2,0)$ Pa is applied to the right boundary; the top and bottom boundaries are traction-free.
         Example is taken from: _Demirdžić, I. "A fourth-order finite volume method for structural analysis." Applied Mathematical Modelling, 2016._
         
     - __`squareBlock2D`__   
-        2D square domain ($1 x 1$ m), left patch fixed, top and bottom are traction-free. The right patch have prescribed traction in $x$ direction. Poisson's value is $0$ resulting in linear distribution of displacement field.
+        2D square domain ($1$ x $1$ m), left patch fixed, top and bottom are traction-free. The right patch have prescribed traction in $x$ direction. Poisson's value is $0$ resulting in linear distribution of displacement field.
     
     - __`squareBlock2DMMS`__  
-        2D square domain ($1 x 1$ m), all patches have zero displacement. Body force calculated according to expected solution.  Example is taken from: 
+        2D square domain ($1$ x $1$ m), all patches have zero displacement. Body force calculated according to expected solution.  Example is taken from: 
         _Aycock, Kenneth I., Nuno Rebelo, and Brent A. Craven. "Method of manufactured solutions code verification of elastostatic solid mechanics problems in a commercial finite element solver."  Computers & Structures, 2020._
     
         

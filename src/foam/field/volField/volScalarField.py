@@ -24,10 +24,10 @@ class volScalarField(volField):
     # Field dimensions
     _dimensions = 1
 
-    def __init__(self, fieldName, mesh, scalarFieldEntries, N=3, Nn=16, GpNb=7):
+    def __init__(self, fieldName, mesh, scalarFieldEntries, N=3):
 
         # Initialise volField
-        super().__init__(fieldName, mesh, scalarFieldEntries, N, Nn, GpNb)
+        super().__init__(fieldName, mesh, scalarFieldEntries, N)
 
     @property
     def dim(self) -> int:

@@ -31,6 +31,12 @@ class volFieldBoundaryConditions():
         def solidTraction(w_diag, Q):
             pass
 
+        def fixedValueFromZeroGrad(w_diag, Q):
+            volFieldBoundaryConditions.LREcoeffs.fixedValue(w_diag, Q)
+
+        def pressureTraction(w_diag, Q):
+            volFieldBoundaryConditions.LREcoeffs.zeroGradient(w_diag, Q)
+
     # Evaluate is used to calculate values at boundaries after
     # cell centred values are calculated
     class evaluate:

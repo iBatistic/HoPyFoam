@@ -18,13 +18,10 @@ class Laplacian():
 
     @classmethod
     def construct(self, psi, gamma):
-
-        print('Assembling system of equations for Laplacian operator\n')
-
         try:
-            if (psi._dimensions == 1):
+            if (psi.dim == 1):
                 return self.scalarLaplacian(psi, gamma)
-            elif (psi._dimensions == 3):
+            elif (psi.dim == 3):
                 return self.vectorLaplacian(psi, gamma)
             else:
                 raise ValueError(f'Psi dimensions are set to {psi._dimensions}')

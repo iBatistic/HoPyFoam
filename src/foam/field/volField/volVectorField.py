@@ -24,10 +24,10 @@ class volVectorField(volField):
     # Field dimensions
     _dimensions = 3
 
-    def __init__(self, fieldName, mesh, vectorFieldEntries, N=3, Nn=20, GpNb=7):
+    def __init__(self, fieldName, mesh, vectorFieldEntries, N=3):
 
         # Initialise volField
-        super().__init__(fieldName, mesh, vectorFieldEntries, N, Nn, GpNb)
+        super().__init__(fieldName, mesh, vectorFieldEntries, N)
 
     @property
     def dim(self) -> int:

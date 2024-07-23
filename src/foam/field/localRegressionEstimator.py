@@ -210,7 +210,7 @@ class localRegressionEstimator():
 
                 # Used for debugging
                 # Write matrices to textual file, so they can be checked
-                #self.writeData(faceI, gpI, Q, W, volField._facesInterpolationMolecule[faceI], condNumber, M, A, fileName)
+                self.writeData(faceI, gpI, Q, W, condNumber, A, fileName)
 
         # Plot distribution of condition number
         plotCondNumbers(condNumbers)
@@ -233,7 +233,7 @@ class localRegressionEstimator():
         return w
 
     @classmethod
-    def writeData(self, faceI, gpI, Q, W, mol, condNumber, M, A, fileName):
+    def writeData(self, faceI, gpI, Q, W, condNumber, A, fileName):
 
         np.set_printoptions(precision=5)
         np.set_printoptions(linewidth=np.inf)
@@ -247,11 +247,11 @@ class localRegressionEstimator():
 
         file.write(f'Face number: {faceI} \n')
         file.write(f'Gauss point: {gpI} \n')
-        file.write(f'Interpolation molecule: {mol} \n')
-        file.write(f'Neigbours centres: {neis} \n')
+        #file.write(f'Interpolation molecule: {mol} \n')
+        #file.write(f'Neigbours centres: {neis} \n')
         file.write(f"Matrix Q:\n {Q}\n")
         file.write(f"Matrix W:\n {W}\n")
-        file.write(f"Matrix M:\n {M}\n")
+        #file.write(f"Matrix M:\n {M}\n")
         file.write(f"Matrix M condition number:\n {condNumber}\n")
         file.write(f"Matrix A:\n {A}\n \n")
         file.close()

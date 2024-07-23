@@ -21,9 +21,9 @@ class fvMatrix():
         self._psi = psi
 
     @classmethod
-    def construct(self, psi, operatorName, gamma=None):
+    def construct(self, psi, operatorName, gamma=None, secondPsi=None):
 
-        source, A = self.defineMatrix(psi, operatorName, gamma)
+        source, A = self.defineMatrix(psi, operatorName, gamma, secondPsi)
 
         return self(psi, source, A)
 
@@ -65,8 +65,18 @@ class fvMatrix():
         # Evaluate boundary values
         self._psi.evaluateBoundary()
 
-    # Adding two fvMatrices
     def __add__(self, other):
+        '''
+        Adding two fvMatrices
+        '''
         A = self._A + other._A
         source = self._source + other._source
+        return fvMatrix(self._psi, source, A)
+
+    def __sub__(self, other):
+        '''
+        Subtracting two fvMatrices
+        '''
+        A = self._A - other._A
+        source = self._source - other._source
         return fvMatrix(self._psi, source, A)

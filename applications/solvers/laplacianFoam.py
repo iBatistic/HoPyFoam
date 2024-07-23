@@ -32,8 +32,8 @@ args = arg_parser().parse_args()
 mesh = fvMesh()
 solControl = solutionControl()
 
-# Initialise scalar field T
-T = volScalarField("T", mesh, readScalarField("T"), N=3, Nn=16, GpNb=7)
+# Initialise scalar field T, N is interpolation order
+T = volScalarField("T", mesh, readScalarField("T"), N=3)
 
 # Read diffusivity from transportProperties dict
 gammaDimensions, gammaValue = readTransportProperties('DT')
