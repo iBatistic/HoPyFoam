@@ -31,15 +31,20 @@ class localRegressionEstimator():
         self._mesh = mesh
 
         # Gauss faces points LRE coefficients
-        self._c, self._cx, self._cy, self._cz = self.makeCoeffs(volField, mesh, "QR")
+        self._c, self._cx, self._cy, self._cz = self.makeFaceCoeffs(volField, mesh, "QR")
+
+        # Cell centre points LRE coefficients
+        self._cCell, self._cxCell, self._cyCell, self._czCell = self.makeCellCoeffs(volField, mesh)
 
         # Gauss faces points final interpolation coefficients, assembled using cx,cy and cz
         # Each item in list is corresponding face, each face has sublist of Gauss points
         # Each Gauss point has interpolation vector (cx, cy, cz)
-        self._C = self.makeCoeffsVector()
+        self._C = self.makeFaceCoeffsVector()
+
+        self._CCell = self.makeCellCoeffsVector()
 
     # Return gradCoeffs vector cx for each Gauss points
-    def makeCoeffsVector(self):
+    def makeFaceCoeffsVector(self):
 
         coeffs = [[[] for i in range (self._volField._GaussPointsNb)] for x in range(self._mesh.nFaces)]
 
@@ -52,14 +57,35 @@ class localRegressionEstimator():
                          self._cz[faceI][point][cellN]]))
         return coeffs
 
+    def makeCellCoeffsVector(self):
+        coeffs = [[] for x in range(self._mesh.nCells)]
+        #print(self._cxCell[0][1])
+        warnings.warn(f"makeCellCoeffsVector treba napraviti kako spada"
+                      f"sad bi moglo ovako raditi ali nije provjereno.\n", stacklevel=3)
+
+        for cellI in range(self._mesh.nCells):
+            for cellN in range(self._volField.Nn):
+                #print(cellI, cellN)
+                coeffs[cellI].append(np.array( \
+                    [self._cxCell[cellI][0][cellN], \
+                     self._cyCell[cellI][0][cellN], \
+                     self._czCell[cellI][0][cellN]]))
+
+        #print(coeffs[0][0])
+        return coeffs
+
     def gradCoeffs(self):
         return self._C
+
+    @property
+    def cellGradCoeffs(self):
+        return self._CCell
 
     def coeffs(self):
         return self._c
 
     @timed
-    def makeCoeffs(self, volField, mesh, method) -> list[list[np.ndarray]]:
+    def makeFaceCoeffs(self, volField, mesh, method) -> list[list[np.ndarray]]:
 
         # File to write data for debug
         fileName = "LRE_coeffs.debug.txt"
@@ -210,10 +236,121 @@ class localRegressionEstimator():
 
                 # Used for debugging
                 # Write matrices to textual file, so they can be checked
-                self.writeData(faceI, gpI, Q, W, condNumber, A, fileName)
+                #self.writeData(faceI, gpI, Q, W, condNumber, A, fileName)
 
         # Plot distribution of condition number
         plotCondNumbers(condNumbers)
+
+        return c, cx, cy, cz
+
+    def makeCellCoeffs(self, volField, mesh) -> list[list[np.ndarray]]:
+        print("sto sa ghost celijama na rubu koje nisu proracunska tocka jaoo komplik")
+
+        # Cell interpolation molecules
+        molecules = volField._cellsInterpolationMolecule
+
+        # Stencils size (this is equal to volField.Nn only at interior cells)
+        Nn = [len(molecule) for molecule in molecules]
+
+        # Number of terms in Taylor expression
+        Np = volField.Np
+
+        # Coefficient for each cell interpolation molecule
+        c = [[] for x in range(mesh.nCells)]
+        cx = [[] for x in range(mesh.nCells)]
+        cy = [[] for x in range(mesh.nCells)]
+        cz = [[] for x in range(mesh.nCells)]
+
+        # Loop over Gauss points of interior faces
+        for cellI in range(mesh.nCells):
+
+            # Loop over neighbours Nn and find max distance
+            rs = 0.0
+            for i in range(Nn[cellI]):
+                neiC = mesh.C[molecules[cellI][i]]
+                rsNew = max(rs, np.linalg.norm(mesh.C[cellI] - neiC))
+                rs = rsNew
+
+            # np.zeros((rows, cols))
+            Q = np.zeros((volField.Np, volField.Nn))
+            W = np.zeros((volField.Nn, volField.Nn))
+
+            # Loop over neighbours Nn and construct matrix Q, each neighbour cell have its row
+            # (n-th column of Q is q(xn-x))
+            for i in range(Nn[cellI]):
+                # Neighbour cell centre
+                neiC = mesh.C[molecules[cellI][i]]
+
+                # Taylor series terms calculated using nested for loops
+                N = volField.N
+
+                # Scaling factor
+                h = 2.0 * rs
+                pos = int(0)
+                for I in range(N + 1):
+                    for J in range(N - I + 1):
+                        fact = np.math.factorial(I) * np.math.factorial(J)
+                        Q[pos, i] = pow(neiC[0] - mesh.C[cellI][0], I) * pow(neiC[1] - mesh.C[cellI][1], J) * (
+                                    1.0 / fact)  # * (1/pow(h,I+J))
+                        pos += 1;
+
+            # Loop over neighbours Nn and construct matrix W (diagonal matrix)
+            w_diag = np.zeros(volField.Nn)
+            for i in range(Nn[cellI]):
+                neiC = mesh.C[molecules[cellI][i]]
+                dist = np.linalg.norm(neiC - mesh.C[cellI])
+                w_diag[i] = self.weight(abs(dist), rs)
+
+            # Add boundary face contribution to Q and W
+            warnings.warn(f"Add boundary face contribution to Q and W ???...\n", stacklevel=3)
+            if cellI in mesh.boundaryCells:
+                cellFaces = mesh.cellFaces[cellI]
+                for faceI in cellFaces:
+                    facePatchType = mesh.facePatchType(faceI, self._volField, False)
+
+                    if Nn[cellI] == volField.Nn - 1:
+                        if facePatchType != 'empty' and facePatchType is not None:
+                            w_diag[-1] = 1.0
+                            Q[0][-1] = 1.0
+                    if Nn[cellI] == volField.Nn - 2:
+                        if facePatchType == "pressureTraction":
+                            w_diag[-1] = 1.0
+                            Q[0][-1] = 1.0
+                        if facePatchType == "fixedValueFromZeroGrad":
+                            w_diag[-2] = 1.0
+                            Q[0][-2] = 1.0
+
+            # Replace diagonal of W with calculated one w_diag
+            diagonal_indices = np.diag_indices(W.shape[0])
+            W[diagonal_indices] = w_diag
+
+            Qhat = Q @ np.diag(np.sqrt(np.diag(W)))
+
+            # Perform QR decomposition
+            O, R = np.linalg.qr(Qhat.T, mode='reduced')
+
+            Bhat = np.diag(np.sqrt(np.diag(W))) @ np.eye(len(w_diag))
+
+            Rbar = R[:Np, :Np]
+            Qbar = O[:, :Np]
+
+            # In numpy there is no canonical way to compute the inverse
+            # of an upper triangular matrix.
+            A = np.linalg.solve(Rbar, Qbar.T @ Bhat)
+
+            condNumber = np.linalg.cond(Rbar)
+
+            if condNumber > 1e12:
+                warnings.warn(f"At least one face with large condition number (>1e12) detected\n "
+                              f"This will mess up results. Terminating calculation...\n", stacklevel=3)
+
+            # Interpolation coefficients for the current Gauss point
+            # With above for loop Taylor expression looks like:
+            # 1, (y-b), (y-b)^2, (x-a), (x-a)(x-b), (x-a)^2
+            c[cellI].append(list(A[0, :]))
+            cx[cellI].append(list(A[1 + N, :]))
+            cy[cellI].append(list(A[1, :]))
+            cz[cellI].append([0.0 for _ in range(len(list(A[1, :])))])
 
         return c, cx, cy, cz
 

@@ -47,6 +47,12 @@ class volFieldBoundaryConditions():
         def zeroGradient(*args):
             pass
 
+        def pressureTraction(*args):
+            pass
+
+        def fixedValueFromZeroGrad(*args):
+            pass
+
         def fixedValue(psi, mesh, bdDict, patchName, boundaryValues):
             boundary = mesh._boundary
             nInternalFaces = mesh.nInternalFaces
@@ -67,6 +73,7 @@ class volFieldBoundaryConditions():
             nInternalFaces = mesh.nInternalFaces
             GaussPointsAndWeights = psi._facesGaussPointsAndWeights
 
+
             for patch in boundary:
                 if patch == patchName:
                     startFace = boundary[patch]['startFace']
@@ -74,6 +81,9 @@ class volFieldBoundaryConditions():
 
                     for i in range(nFaces):
                         faceI = startFace + i - nInternalFaces
+
+                        # Reset boundary value to avoid accumulation
+                        boundaryValues[faceI] = np.array([0,0,0])
 
                         # List of face Gauss points [1] and weights [0]
                         faceGaussPoints = GaussPointsAndWeights[faceI][1]

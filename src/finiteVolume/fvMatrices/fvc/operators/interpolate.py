@@ -17,7 +17,34 @@ from petsc4py import PETSc
 class interpolate():
 
     @classmethod
-    def interpolate(self, psi, gamma=None, secondPsi=None):
+    def diagToFace(self, diagTensor, U):
+        '''
+        Interpolate momentum matrix diagonal from cell centres to face
+        Gauss points. All boundaries are extrapolated.
+        '''
+        mesh = U._mesh
+
+        # Initialize faces Gauss points values
+        GaussPointsValues = np.zeros((mesh.nFaces, U.Ng, 3, 3))
+
+        for faceI in range(mesh.nFaces):
+            faceStencil = U._facesInterpolationMolecule[faceI]
+            faceGaussPointsAndWeights = U._facesGaussPointsAndWeights[faceI]
+
+            # Loop over Gauss points
+            for i, gp in enumerate(faceGaussPointsAndWeights[1]):
+                # Gauss point interpolation coefficient vector
+                c = U.LRE().coeffs()[faceI][i]
+
+                # Loop over Gauss point interpolation stencil
+                for j, cellIndex in enumerate(faceStencil):
+                    GaussPointsValues[faceI][i] += \
+                        diagTensor[cellIndex] * c[j]
+
+        return GaussPointsValues
+
+    @classmethod
+    def cellToFace(self, psi, gamma=None, cellPsi=None):
         '''
         Interpolate value from cell centres to face Gauss points. Special care
         is given at boundaries.
@@ -51,15 +78,20 @@ class interpolate():
 
             # Call corresponding patch function
             patchContribution = eval("interpolateBoundaryConditions." + patchType)
-            patchContribution(self, psi, patch, GaussPointsValues, secondPsi, gamma)
+            patchContribution(self, psi, patch, GaussPointsValues, cellPsi, gamma)
 
         return GaussPointsValues
+
 
 class interpolateBoundaryConditions(interpolate):
 
     def empty(self, *args):
         pass
 
+    # Hmmm da li je ovo dobro ili tamo kada radim loop za gradijent moram zanemarit ovaj face...
+    def zeroGradient(self, psi, patch, GaussPointsValues, *args):
+        warnings.warn(f"zeroGradient at interpolateBoundaryConditions is ???...\n", stacklevel=3)
+        pass#interpolateBoundaryConditions.fixedValueFromZeroGrad(self, psi, patch, GaussPointsValues, *args)
 
     def fixedValue(self, psi, patch, GaussPointsValues, *args):
         '''
@@ -145,7 +177,7 @@ class interpolateBoundaryConditions(interpolate):
                 # Loop over Gauss point interpolation stencil and add
                 # stencil cells contribution to matrix
                 for j, cellIndex in enumerate(faceStencil):
-                    gpValue += psi._cellValues[cellIndex] * (cx[j] @ nf)
+                    gpValue += np.array(psi._cellValues[cellIndex]) * (cx[j] @ nf)
 
                     # Boundary face centre is not included in face stencil list
                     if j == (len(faceStencil) - 1):
@@ -154,7 +186,7 @@ class interpolateBoundaryConditions(interpolate):
 
             GaussPointsValues[faceI][i] = gpValue
 
-    def pressureTraction(self, psi, patch, GaussPointsValues, secondPsi, mu):
+    def pressureTraction(self, psi, patch, GaussPointsValues, cellPsi, mu):
         '''
         Calculate the pressure from Hooke's law. This is practically a fixed
         value, with value from the constitutive relation.
@@ -168,7 +200,7 @@ class interpolateBoundaryConditions(interpolate):
         GaussPointsAndWeights = psi._facesGaussPointsAndWeights
 
         # Prescribed traction value at boundary
-        prescribedValue = secondPsi._boundaryConditionsDict[patch]['value']['uniform']
+        prescribedValue = cellPsi._boundaryConditionsDict[patch]['value']['uniform']
 
         # Loop over patch faces
         for faceI in range(startFace, startFace + nFaces):
@@ -189,14 +221,15 @@ class interpolateBoundaryConditions(interpolate):
 
                 # Gauss point interpolation coefficient vector for each neighbouring cell
                 cx = psi.LRE().gradCoeffs()[faceI][i]
-                cxSecondPsi = secondPsi.LRE().gradCoeffs()[faceI][i]
+                cxSecondPsi = cellPsi.LRE().gradCoeffs()[faceI][i]
 
                 # Loop over Gauss point interpolation stencil and add
                 # stencil cells contribution to matrix
                 for j, cellIndex in enumerate(faceStencil):
+
                     # Normal face dot with gradient at Gauss point
                     I = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]], dtype=PETSc.ScalarType)
-                    nGrad =  ( mu * ((cxSecondPsi[j] @ nf) * I)) @ secondPsi._cellValues[cellIndex]
+                    nGrad =  ( mu * ((cxSecondPsi[j] @ nf) * I)) @ cellPsi._cellValues[cellIndex]
 
                     # Normal face dot with gradient transpose at Gauss point
                     nfx = nf[0]
@@ -208,8 +241,8 @@ class interpolateBoundaryConditions(interpolate):
                     T = np.array([[cxx * nfx, cxx * nfy, cxx * nfz],
                                          [cxy * nfx, cxy * nfy, cxy * nfz],
                                          [cxz * nfx, cxz * nfy, cxz * nfz]], dtype=PETSc.ScalarType)
-                    nGradT = mu*(T @ secondPsi._cellValues[cellIndex])
+                    nGradT = mu*(T @ cellPsi._cellValues[cellIndex])
 
                     gpValue += nf @ (nGrad  + nGradT - prescribedValue)
 
-            GaussPointsValues[faceI][i] = gpValue
+                GaussPointsValues[faceI][i] = gpValue

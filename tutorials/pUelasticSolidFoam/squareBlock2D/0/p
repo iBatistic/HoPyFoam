@@ -17,20 +17,20 @@ FoamFile
 
 dimensions      [1 -1 -2 0 0 0 0];
 
-internalField   uniform 1;
+internalField   uniform 0;
 
 boundaryField
 {
     bottom
     {
-        type         pressureTraction;
-        value	        uniform 1;
+        type         	pressureTraction;
+        value	        uniform 0;
     }
 
     top
     {
-        type         pressureTraction;
-        value	        uniform 1;
+        type         	pressureTraction;
+        value	        uniform 0;
     }
 
     left
@@ -41,8 +41,8 @@ boundaryField
     
     right
     {
-        type          pressureTraction;
-        value	        uniform 1;
+        type            fixedValueFromZeroGrad;
+        value	        uniform 0;
     }
 
     frontAndBackPlanes

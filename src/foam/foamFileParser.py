@@ -333,6 +333,11 @@ def readMechanicalProperties(path=MECHANICALPROPERTIES) -> tuple[float, float]:
 
     mu = E / (2.0*(1.0 + nu))
 
+    if nu > (0.499):
+        print(f"second Lame\'s parameter mu: {mu:.5f}\n"
+              f"First Lame\'s parameter lambda: None")
+        return mu, None
+
     if planeStress:
         lam = nu * E / ((1.0 + nu)*(1.0 - nu))
     else:

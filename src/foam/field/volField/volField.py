@@ -39,6 +39,8 @@ class volField(field, volFieldBoundaryConditions):
         # Number of integration points per CV face
         self._GaussPointsNb = self.integrationPointsNb(mesh.twoD, N)
 
+        print(f'Field {fieldName}, N: {self._N}, Np: {self._Np}, Nn: {self.Nn},  Ng: {self._GaussPointsNb}')
+
         # A quick check for stencil size requirement
         if (self._Np >= self._Nn):
             warnings.warn(f"\nNumber of neighbours {self._Nn} is smaller than number "
@@ -51,17 +53,24 @@ class volField(field, volFieldBoundaryConditions):
         cellValuesData, self._dataType, self._boundaryConditionsDict = fieldEntries
 
         # Set values at cell centres
-        self._cellValues = self.initCellValues(mesh, cellValuesData, self._dimensions)
-        self._boundaryValues = self.initBoundaryValues(mesh, self._dimensions)
+        self._cellValues = self.initCellValues(mesh, cellValuesData, self.dim)
+        self._boundaryValues = self.initBoundaryValues(mesh, self.dim)
 
-        # Make interpolation molecule for faces
+        # Make interpolation molecule for faces and cell centres
+        print(f"Calculating interpolation stencil for field {self._fieldName}")
         self._facesInterpolationMolecule = self.makeFacesInterpolationMolecule()
+        self._cellsInterpolationMolecule = self.makeCellsInterpolationMolecule()
+
+        # for item in self._facesInterpolationMolecule:
+        #     print(len(item),"--->",  item)
+
+        # Make Gauss points on faces and corresponding weights
+        print(f"Calculating Gauss integration points for field {self._fieldName}")
         self._facesGaussPointsAndWeights = self.makeFacesGaussPointsAndWeights(self._boundaryConditionsDict, mesh)
 
         # Local Regression Estimator
         # Coefficients are calculated on object initialisation
         self._LRE = localRegressionEstimator(self, mesh)
-
 
     def LRE(self) -> localRegressionEstimator:
         return self._LRE
@@ -170,9 +179,12 @@ class volField(field, volFieldBoundaryConditions):
 
         return boundaryValues
 
+    def addCorrection(self, other, relaxation):
+        for cellI in range(self._mesh.nCells):
+            self._cellValues[cellI] += np.array(other._cellValues[cellI]) * relaxation
+
     #This is brute force approach. Should be done more efficiently!
     def makeFacesInterpolationMolecule(self) -> list[int]:
-        print(f"Calculating interpolation stencil for field {self._fieldName}")
 
         # Number of cells in stencil
         Nn = self._Nn
@@ -209,10 +221,50 @@ class volField(field, volFieldBoundaryConditions):
 
         return facesMolecule
 
+    def makeCellsInterpolationMolecule(self) -> list[int]:
+
+        cellsMolecule = []
+
+        mesh = self._mesh
+        Nn = self._Nn
+
+        for cellI in range(mesh.nCells):
+            # Construct interpolation molecule for cell centre
+            distances = []
+            cellC = self._mesh._C[cellI]
+
+            for cellN in range(mesh.nCells):
+                distance = np.linalg.norm(mesh.C[cellN] - cellC)
+                distances.append((cellN, distance))
+
+            # Sort faces according to distances and take Nn faces in stencil
+            distancesSorted = \
+                sorted(distances, key=lambda x: np.linalg.norm(x[1]))
+
+            if cellI not in mesh.boundaryCells:
+                numberOfNeighbors = Nn
+            else:
+                # Reduce the number of neighbors in stencil for the number of
+                # ghost boundary faces.
+                # For example, some boundary cells have 2 boundary faces
+                boundaryFaces = 0
+                for faceI in mesh.cellFaces[cellI]:
+                    if faceI >= mesh.nInternalFaces:
+                        if faceI not in mesh.emptyFaces:
+                            boundaryFaces += 1
+
+                numberOfNeighbors = Nn - boundaryFaces
+
+            cellMolecule = \
+                [element[0] for element in distancesSorted[:numberOfNeighbors]]
+
+            cellsMolecule.append(cellMolecule)
+
+        return cellsMolecule
+
+
     @timed
     def makeFacesGaussPointsAndWeights(self, boundaryConditionsDict, mesh) -> list[list[np.ndarray]]:
-
-        print(f"Calculating Gauss integration points for field {self._fieldName}")
 
         # Each face has list of corresponding Gauss points and their weights
         facesGaussPointsAndWeights = []

@@ -12,6 +12,7 @@ __email__ = 'ibatistic@fsb.hr, philip.cardiff@ucd.ie'
 __all__ = ['fvMesh']
 
 import numpy as np
+import sys
 
 import src.foam.foamFileParser as foamFileParser
 from src.foam.primitives import face
@@ -37,9 +38,30 @@ class fvMesh(polyMesh):
         self._V, self._C = self._makeCellsData()
         self._meshSize = self.nCells
 
+        # List of boundary cells
+        self._boundaryCells = self.makeBoundaryCells()
+
+        # List of cell faces
+        self._cellFaces = self.makeCellFaces()
+
+        # List of empty faces
+        self._emptyFaces = self.makeEmptyFaces()
+
     @property
     def boundary(self):
         return self._boundary
+
+    @property
+    def cellFaces(self):
+        return self._cellFaces
+
+    @property
+    def emptyFaces(self):
+        return self._emptyFaces
+
+    @property
+    def boundaryCells(self):
+        return self._boundaryCells
 
     # Number of faces
     @property
@@ -94,8 +116,8 @@ class fvMesh(polyMesh):
     def nCells(self) -> int:
         return self._owner.max() + 1
 
-    def facePatchType(self, faceI, volField) -> str:
-        if(faceI < self.nInternalFaces-1):
+    def facePatchType(self, faceI, volField, errorOnInternalFace=True) -> str:
+        if faceI < self.nInternalFaces-1 and errorOnInternalFace:
             raise IndexError(
                 "Face index {} corresponds to internal face".format(faceI))
 
@@ -106,6 +128,9 @@ class fvMesh(polyMesh):
             if(faceI >= startFace and faceI < nFaces+startFace):
                 #print(f'face {faceI} is on {patch} with start face {startFace} ')
                 return volField._boundaryConditionsDict[patch]['type']
+
+        # Face is internal
+        return None
 
     def facePatchName(self, faceI, volField) -> str:
         if(faceI < self.nInternalFaces-1):
@@ -250,3 +275,48 @@ class fvMesh(polyMesh):
 
         C /= V[:, np.newaxis]
         return V, C
+
+    def makeBoundaryCells(self) -> list[int]:
+
+        # Number of empty boundary faces
+        boundary = self._boundary
+
+        # Initialise list of boundary cells
+        boundaryCells = []
+
+        for patch in boundary:
+            if boundary[patch]['type'] != 'empty':
+                startFace = self.boundary[patch]['startFace']
+                nFaces = self.boundary[patch]['nFaces']
+
+                for faceI in range(startFace, startFace + nFaces):
+                    bCellIndex = self._owner[faceI]
+                    if bCellIndex not in boundaryCells:
+                        boundaryCells.append(bCellIndex)
+
+        return boundaryCells
+
+    def makeCellFaces(self) -> list[list[int]]:
+
+        cellFaces = [[] for _ in range(self.nCells)]
+
+        for i in range(len(self._neighbour)):
+            cellFaces[self._neighbour[i]].append(i)
+
+        for i in range(len(self._owner)):
+            cellFaces[self._owner[i]].append(i)
+
+        return cellFaces
+
+    def makeEmptyFaces(self) -> list[int]:
+        emptyFaces = []
+
+        boundary = self._boundary
+        for patch in boundary:
+            if boundary[patch]['type'] == 'empty':
+                startFace = boundary[patch]['startFace']
+                nFaces = boundary[patch]['nFaces']
+
+                for faceI in range(nFaces):
+                    emptyFaces.append(startFace+faceI)
+        return emptyFaces

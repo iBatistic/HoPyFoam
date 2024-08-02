@@ -35,16 +35,13 @@ class volVectorField(volField):
 
     # Write field in OpenFOAM format
     def write(self, timeValue):
-        print(f"\nWriting {self._fieldName} field fot time {timeValue} s\n")
+        print(f"Writing {self._fieldName} field for time {timeValue} s")
 
         filePath = str(timeValue) + "/" + self._fieldName
 
-        # Remove old time directory if exists
-        if (os.path.exists(str(timeValue))):
-            shutil.rmtree(str(timeValue))
-
         # Make new time directory
-        os.mkdir(str(timeValue))
+        if (os.path.exists(str(timeValue)) == False):
+            os.mkdir(str(timeValue))
 
         # Write field in OF format
         with open(filePath, 'w') as file:

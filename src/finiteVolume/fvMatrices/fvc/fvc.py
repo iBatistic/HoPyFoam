@@ -16,10 +16,10 @@ from src.finiteVolume.fvMatrices.fvc.operators import *
 class fvc(fvMatrix):
 
     @classmethod
-    def defineMatrix(self, psi, operatorName, gamma=None, secondPsi=None):
+    def defineMatrix(self, psi, operatorName, gamma=None, cellPsi=None):
 
         # Make function for Laplacian, LaplacianTrace or LaplacianTranspose
         operator = eval(operatorName + "." + "construct")
 
         # Operator function returns A,b
-        return operator(psi, gamma, secondPsi)
+        return operator(psi, gamma, cellPsi)

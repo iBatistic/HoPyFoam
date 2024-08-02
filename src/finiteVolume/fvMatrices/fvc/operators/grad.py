@@ -22,12 +22,12 @@ ADD = PETSc.InsertMode.ADD_VALUES
 class grad():
 
     @classmethod
-    def construct(self, psi, gamma, secondPsi):
+    def construct(self, psi, gamma, cellPsi):
         try:
             if (psi.dim == 1):
-                return self.scalarGrad(psi, gamma, secondPsi)
+                return self.GaussScalarGrad(psi, gamma, cellPsi)
             elif (psi.dim == 3):
-                return self.vectorGrad(psi, gamma, secondPsi)
+                return self.GaussVectorGrad(psi, gamma, cellPsi)
             else:
                 raise ValueError(f'Psi dimensions are set to {psi._dimensions}')
         except ValueError as e:
@@ -36,11 +36,11 @@ class grad():
                 sys.exit(1)
 
     @classmethod
-    def vectorGrad(self, psi, gamma, secondPsi):
+    def GaussVectorGrad(self, psi, gamma, cellPsi):
         pass
 
     @classmethod
-    def scalarGrad(self, psi, gamma, secondPsi):
+    def GaussScalarGrad(self, psi, gamma, cellPsi):
         mesh = psi._mesh
         nCells = mesh.nCells
         nInternalFaces = mesh.nInternalFaces
@@ -67,7 +67,7 @@ class grad():
         source.setUp()
 
         # 1 stage: Interpolate pressure from cell centres to face Gauss points
-        GaussPointsValues = interpolate.interpolate(psi, gamma, secondPsi)
+        GaussPointsValues = interpolate.cellToFace(psi, gamma, cellPsi)
 
         # 2 stage: cell-centre gradient using Gauss theorem
         # First loop over internal faces
@@ -97,6 +97,11 @@ class grad():
 
         # Loop over boundary faces
         for patch in psi._boundaryConditionsDict:
+
+            # Skip empty patches
+            if psi._boundaryConditionsDict[patch]['type'] == 'empty':
+                continue
+
             # Preliminaries
             startFace = mesh.boundary[patch]['startFace']
             nFaces = mesh.boundary[patch]['nFaces']

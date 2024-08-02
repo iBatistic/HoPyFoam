@@ -1,0 +1,74 @@
+/*---------------------------------------------------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | foam-extend: Open Source CFD                    |
+|  \\    /   O peration     | Version:     4.1                                |
+|   \\  /    A nd           | Web:         http://www.foam-extend.org         |
+|    \\/     M anipulation  | For copyright notice see file Copyright         |
+\*---------------------------------------------------------------------------*/
+Build  : 4.1-70b064d0f326
+Exec   : blockMesh
+Date   : Jul 31 2024
+Time   : 12:23:23
+Host   : "flex"
+PID    : 173975
+CtrlDict : "/home/ibatistic/work/HoPyFoam/tutorials/pUelasticSolidFoam/squareBlock_s4f/system/controlDict"
+Case   : /home/ibatistic/work/HoPyFoam/tutorials/pUelasticSolidFoam/squareBlock_s4f
+nProcs : 1
+sigFpe : Enabling floating point exception trapping (FOAM_SIGFPE).
+allowSystemOperations : Disallowing user-supplied system call operations
+
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+Create time
+
+
+Creating block mesh from
+    "/home/ibatistic/work/HoPyFoam/tutorials/pUelasticSolidFoam/squareBlock_s4f/constant/polyMesh/blockMeshDict"
+
+Creating curved edges
+Creating topology blocks
+Creating topology patches
+
+Creating block mesh topology
+
+Check topology
+
+	Basic statistics
+		Number of internal faces : 0
+		Number of boundary faces : 6
+		Number of defined boundary faces : 6
+		Number of undefined boundary faces : 0
+	Checking patch -> block consistency
+
+Creating block offsets
+Creating merge list .
+
+Creating polyMesh from blockMesh
+Creating patches
+Creating cells
+Creating points with scale 1
+    Block 0 cell size :
+        i : 0.1 .. 0.1
+        j : 0.1 .. 0.1
+        k : 0.1 .. 0.1
+
+
+Writing polyMesh
+----------------
+Mesh Information
+----------------
+  boundingBox: (0 0 -0.05) (10 10 0.05)
+  nPoints: 20402
+  nCells: 10000
+  nFaces: 40200
+  nInternalFaces: 19800
+----------------
+Patches
+----------------
+  patch 0 (start: 19800 size: 100) name: left
+  patch 1 (start: 19900 size: 100) name: top
+  patch 2 (start: 20000 size: 100) name: right
+  patch 3 (start: 20100 size: 100) name: bottom
+  patch 4 (start: 20200 size: 20000) name: frontAndBackPlanes
+
+End
+

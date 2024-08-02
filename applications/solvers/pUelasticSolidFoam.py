@@ -25,8 +25,7 @@ from src.foam.field.volField.volVectorField import volVectorField
 from src.foam.field.volField.volScalarField import volScalarField
 from src.finiteVolume.fvMatrices.fvm.fvm import fvm
 from src.finiteVolume.fvMatrices.fvc.fvc import fvc
-from src.finiteVolume.fvMatrices.fvc.operators.interpolate import interpolate
-
+from src.finiteVolume.fvMatrices.fvc.operators import *
 
 # Execution start time, used to measured elapsed clock time
 exec_start_time = timeModule.perf_counter()
@@ -45,33 +44,20 @@ N = 1
 # Initialise displacement vector field U, N is interpolation order
 U = volVectorField("U", mesh, readVectorField("U"),  N)
 
+volOverD = volVectorField("volOverD", mesh, readVectorField("volOverD"),  N)
+
 # Initialise pressure scalar field p
 p = volScalarField("p", mesh, readScalarField("p"), N)
 
 # Initialise pressure correction scalar field pCorr
-#pCorr = volScalarField("p", mesh, readScalarField("pCorr"), N)
+pCorr = volScalarField("pCorr", mesh, readScalarField("pCorr"), N)
 
 # Read mechanichalProperties dict to get first and second Lame parameters
 mu, lam = readMechanicalProperties()
 
-# Move to SIMPLE or to be consistent with OF calculate here.
-# MAybe add fvc.interpolate functions?
-def predictFaceDisplacement(U, p, pressureGrad, D):
-     '''
-     Correct face displacement according to Rhie-chow interpolation.
-     Return field is corrected displacement value for each Gauss point
-     '''
-
-   # Ustar = interpolate.vectorInterpolate(U)
-   # rAU = interpolate.vectorInterpolate(1/D)
-   # pressureGrad = interpolate.vectorInterpolate()
-# interpolate.
-#     pass
-
-
 while (solControl.loop()):
 
-    print(f'Time = {solControl.time()} \n')
+    print(f'\nTime = {solControl.time()} \n')
 
     # Assemble the Laplacian, LaplacianTranspose and body force
     laplacian = fvm.construct(U, 'Laplacian', mu)
@@ -87,46 +73,61 @@ while (solControl.loop()):
     # Solve momentum matrix
     momentumMatrix.solve()
 
-    # Velocity interpolated to face Gauss points
-    UStar = interpolate.interpolate(U)
+    # Displacement interpolated to face Gauss points
+    UStar = interpolate.cellToFace(U)
 
-    # Inverted momentum matrix diagonal coefficients multiplied with cell volume
-    #volOverDiag = momentumMatrix.volOverD()
-    #pGamma = interpolate.scalarInterpolate(volOverDiag)
+    # Inverse of momentum matrix diagonal (tensor coefficient) multiplied with
+    # cell volume
+    volOverDiag = momentumMatrix.volOverD()
 
-    #divU = fvc.construct(UStar, 'div')
-    #laplacianPressureCorr = fvm.construct(pCorr, 'pressureCorrLaplacian', pGamma)
+    # Interpolate volOverDiag to face Gauss points
+    pGamma = interpolate.diagToFace(volOverDiag, volOverD)
 
-    #pressureCorrMatrix = divU - laplacianPressureCorr
+    # Face Gauss points pressure gradient using interpolation coefficients
+    # mu and U are used for pressureTraction boundaries to get pressure from
+    # constitutive relation
+    pressureGrad = interpolateGrad.cellToFace(p, mu, U)
+    barPressureGrad = interpolateCellGrad.cellToFace(p, mu, U)
+
+    # Rhie-Chow correction for interpolated velocity
+    UHat = UStar
+
+    for faceI in range(mesh.nFaces):
+        for gpI in range(U.Ng):
+            UHat[faceI][gpI] += pGamma[faceI][gpI] @ (barPressureGrad[faceI][gpI] - pressureGrad[faceI][gpI] )
+
+    divU = fvc.construct(UHat, 'div', cellPsi=U)
+    laplacianPressureCorr = fvm.construct(pCorr, 'pCorrLaplacian', pGamma)
+
+    pressureCorrMatrix = laplacianPressureCorr + divU
 
     # Solve pressure correction matrix
-    #pressureCorrMatrix.solve()
+    pressureCorrMatrix.solve()
 
-    # Correct pressure and displacement fields
-    #p = p + pCorr
-    #gradPCorr = fvc.construct(pcorrGrad--)
-    #U = UStar - volOverDiag@gradPCorr
+    # Tu sam dodao negativni predznak, vidi zasto je bio potreban!
+    for I in range(len(pCorr._cellValues)):
+        pCorr._cellValues[I] = np.array(pCorr._cellValues[I])*0.05
 
+    # Correct pressure field
+    print("a sto sa rubnim uvjetima nakon sto podrelaksiram??")
+    p.addCorrection(pCorr, relaxation=1)
 
-    # momentumMatrix._A.convert('dense')
-    # test= momentumMatrix._A.getDenseArray()
-    # np.set_printoptions(precision=2, suppress=True)
-    # wr= [test[i:i + 1].tolist() for i in range(0, len(test), 1)]
-    #
-    # for item in wr:
-    #     print(np.array(item))
-    # # Displacement correction using Rhie-Chow interpolation
-    # D = momentumMatrix.A
-    # UHat = predictFaceDisplacement(U, p, pressureGrad, D)
-    #
-    # # Pressure equation
-    # divU = fvm.construct(UHat, 'div')
-    # pressureLaplacian = fvm.construct(pCorr, 'Laplacian', D)
-    #
+    # Correct displacement field
+    pCorrCellGrad = fvc.construct(pCorr, 'grad')._source.getArray()
+    pCorrCellGrad = [pCorrCellGrad[i:i + 3].tolist() for i in range(0, len(pCorrCellGrad), 3)]
+
+    for cellI, pC in enumerate(pCorrCellGrad):
+       U._cellValues[cellI] -= volOverDiag[cellI] @ pC
+
     # Write results
     U.write(solControl.time())
+    p.write(solControl.time())
+    pCorr.write(solControl.time())
 
-    print(f'Execution time = '
-          f'{timeModule.perf_counter() - exec_start_time:.2f} s \n')
+    # Check convergence and stop iterating if convergence is meet
+    #break
+
+print(f'\nExecution time = '
+      f'{timeModule.perf_counter() - exec_start_time:.2f} s \n')
 
 print('End\n')

@@ -16,7 +16,7 @@ from src.finiteVolume.fvMatrices.fvm.operators import *
 class fvm(fvMatrix):
 
     @classmethod
-    def defineMatrix(self, psi, operatorName, gamma, secondPsi):
+    def defineMatrix(self, psi, operatorName, gamma, *args):
 
         # Make function for Laplacian, LaplacianTrace or LaplacianTranspose
         operator = eval(operatorName + "." + "construct")
