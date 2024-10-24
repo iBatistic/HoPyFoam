@@ -22,28 +22,28 @@ ADD = PETSc.InsertMode.ADD_VALUES
 class grad():
 
     @classmethod
-    def construct(self, psi, gamma, cellPsi):
+    def construct(self, facePsi, *args):
         try:
-            if (psi.dim == 1):
-                return self.GaussScalarGrad(psi, gamma, cellPsi)
-            elif (psi.dim == 3):
-                return self.GaussVectorGrad(psi, gamma, cellPsi)
+            if (facePsi.dim == 1):
+                return self.GaussScalarGrad(facePsi)
+            elif (facePsi.dim == 3):
+                return self.GaussVectorGrad(facePsi)
             else:
-                raise ValueError(f'Psi dimensions are set to {psi._dimensions}')
+                raise ValueError(f'Psi dimensions are set to {facePsi._dimensions}')
         except ValueError as e:
                 print(f'Supported psi dimensions for gradient operator are '
                       f'scalar and vector')
                 sys.exit(1)
 
     @classmethod
-    def GaussVectorGrad(self, psi, gamma, cellPsi):
+    def GaussVectorGrad(self, facePsi):
         pass
 
     @classmethod
-    def GaussScalarGrad(self, psi, gamma, cellPsi):
+    def GaussScalarGrad(self, facePsi):
+        psi = facePsi._baseField
         mesh = psi._mesh
         nCells = mesh.nCells
-        nInternalFaces = mesh.nInternalFaces
 
         # Read PETSc options file
         OptDB = PETSc.Options()
@@ -66,10 +66,7 @@ class grad():
         source.set(0.0)
         source.setUp()
 
-        # 1 stage: Interpolate pressure from cell centres to face Gauss points
-        GaussPointsValues = interpolate.cellToFace(psi, gamma, cellPsi)
-
-        # 2 stage: cell-centre gradient using Gauss theorem
+        # Cell-centre gradient using Gauss theorem
         # First loop over internal faces
         for faceI in range(mesh.nInternalFaces):
 
@@ -90,7 +87,7 @@ class grad():
                 # Owner and neighbour of current face
                 cellP = mesh._owner[faceI]
                 cellN = mesh._neighbour[faceI]
-                value = nf * magSf * GaussPointsValues[faceI][i] * gpW
+                value = nf * magSf * facePsi[faceI][i] * gpW
 
                 source.setValues(range(cellP * 3, cellP * 3 + 3), value, ADD)
                 source.setValues(range(cellN * 3, cellN * 3 + 3), -value, ADD)
@@ -125,9 +122,14 @@ class grad():
 
                     gpW = faceGaussPointsAndWeights[0][i]
 
-                    value = nf * magSf * GaussPointsValues[faceI][i] * gpW
+                    value = nf * magSf * facePsi[faceI][i] * gpW
                     source.setValues(range(cellP * 3, cellP * 3 + 3), value, ADD)
 
+                    # I nije bila neka razlika
+                    #
+                    # if psi.fieldName == "p":
+                    #     if patch == 'pressureTraction':
+                    #         source.setValues(range(cellP * 3, cellP * 3 + 3), -value, ADD)
 
         # Finish matrix assembly
         A.assemble()

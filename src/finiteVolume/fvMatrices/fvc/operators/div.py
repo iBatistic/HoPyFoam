@@ -22,7 +22,7 @@ ADD = PETSc.InsertMode.ADD_VALUES
 class div():
 
     @classmethod
-    def construct(self, GaussPointsValues, gamma, cellPsi):
+    def construct(self, GaussPointsValues, cellPsi):
 
         mesh = cellPsi._mesh
         nCells = mesh.nCells

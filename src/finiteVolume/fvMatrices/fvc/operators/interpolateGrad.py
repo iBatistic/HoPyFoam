@@ -66,6 +66,7 @@ class interpolateBoundaryConditions(interpolateGrad):
         '''
         Zero-gradient boundary
         '''
+#        pass
         mesh = psi._mesh
 
         # Preliminaries
@@ -88,8 +89,14 @@ class interpolateBoundaryConditions(interpolateGrad):
 
             # Loop over Gauss points
             for i, gp in enumerate(faceGaussPointsAndWeights[1]):
-                # Set value to zero-grad
-                GaussPointsValues[faceI][i] = np.array([0, 0, 0])
+
+                # Gauss point interpolation coefficient vector for each neighbouring cell
+                cx = psi.LRE().gradCoeffs()[faceI][i]
+
+                # Loop over Gauss point interpolation stencil and add
+                # stencil cells contribution to matrix
+                for j, cellIndex in enumerate(faceStencil):
+                    GaussPointsValues[faceI][i] += cx[j] * np.array(psi._cellValues[cellIndex])
 
     def pressureTraction(self, psi, patch, GaussPointsValues, cellPsi, mu):
         '''
@@ -108,7 +115,7 @@ class interpolateBoundaryConditions(interpolateGrad):
         prescribedValue = cellPsi._boundaryConditionsDict[patch]['value']['uniform']
 
         # 1 stage: Get boundary face pressure from constitutive relation
-        GaussPointsPressure = np.zeros((mesh.nFaces, psi.Ng, 3))
+        GaussPointsPressure = np.zeros((mesh.nFaces, psi.Ng, 1))
 
         # Loop over patch faces
         for faceI in range(startFace, startFace + nFaces):
@@ -151,7 +158,7 @@ class interpolateBoundaryConditions(interpolateGrad):
 
                     gpValue += nf @ (nGrad  + nGradT - prescribedValue)
 
-            GaussPointsPressure[faceI][i] = gpValue
+                GaussPointsPressure[faceI][i] = gpValue
 
         # 2 stage: Calculate boundary gradient, previously calculated pressure
         # is included in calculation as boundary face is part of the molecule

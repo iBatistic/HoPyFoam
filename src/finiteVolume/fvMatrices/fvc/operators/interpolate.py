@@ -89,9 +89,34 @@ class interpolateBoundaryConditions(interpolate):
         pass
 
     # Hmmm da li je ovo dobro ili tamo kada radim loop za gradijent moram zanemarit ovaj face...
-    def zeroGradient(self, psi, patch, GaussPointsValues, *args):
-        warnings.warn(f"zeroGradient at interpolateBoundaryConditions is ???...\n", stacklevel=3)
-        pass#interpolateBoundaryConditions.fixedValueFromZeroGrad(self, psi, patch, GaussPointsValues, *args)
+    def zeroGradient(self, psi, patch, GaussPointsValues, cellPsi, gamma):
+        pass
+        mesh = psi._mesh
+
+        # Preliminaries
+        startFace = mesh.boundary[patch]['startFace']
+        nFaces = mesh.boundary[patch]['nFaces']
+
+        GaussPointsAndWeights = psi._facesGaussPointsAndWeights
+
+        # Loop over patch faces
+        for faceI in range(startFace, startFace + nFaces):
+
+            # List of face Gauss points [1] and weights [0]
+            faceGaussPointsAndWeights = GaussPointsAndWeights[faceI]
+
+            # Current face points interpolation stencil
+            faceStencil = psi._facesInterpolationMolecule[faceI]
+
+            # Loop over Gauss points
+            for i, gp in enumerate(faceGaussPointsAndWeights[1]):
+                # Interpolation coeffs
+                # c = psi.LRE().coeffs()[faceI][i]
+                #
+                # for j, cellIndex in enumerate(faceStencil):
+                #     GaussPointsValues[faceI][i] += np.array(psi._cellValues[cellIndex]) * c[j]
+
+                GaussPointsValues[faceI][i] = psi._cellValues[mesh._owner[faceI]]
 
     def fixedValue(self, psi, patch, GaussPointsValues, *args):
         '''
@@ -153,7 +178,7 @@ class interpolateBoundaryConditions(interpolate):
         nFaces = mesh.boundary[patch]['nFaces']
 
         GaussPointsAndWeights = psi._facesGaussPointsAndWeights
-
+        warnings.warn(f"fixedValueFromZeroGrad is first order accurate currently...\n", stacklevel=3)
         # Loop over patch faces
         for faceI in range(startFace, startFace + nFaces):
 
@@ -176,15 +201,14 @@ class interpolateBoundaryConditions(interpolate):
 
                 # Loop over Gauss point interpolation stencil and add
                 # stencil cells contribution to matrix
-                for j, cellIndex in enumerate(faceStencil):
-                    gpValue += np.array(psi._cellValues[cellIndex]) * (cx[j] @ nf)
+                # for j, cellIndex in enumerate(faceStencil):
+                #     gpValue += np.array(psi._cellValues[cellIndex]) * (cx[j] @ nf)
+                #
+                #     # Boundary face centre is not included in face stencil list
+                #     if j == (len(faceStencil) - 1):
+                #         gpValue /= -(cx[j + 1] @ nf)
 
-                    # Boundary face centre is not included in face stencil list
-                    if j == (len(faceStencil) - 1):
-                        gpValue /= -(cx[j + 1] @ nf)
-
-
-            GaussPointsValues[faceI][i] = gpValue
+                GaussPointsValues[faceI][i] = psi._cellValues[mesh._owner[faceI]]#gpValue
 
     def pressureTraction(self, psi, patch, GaussPointsValues, cellPsi, mu):
         '''
@@ -245,4 +269,6 @@ class interpolateBoundaryConditions(interpolate):
 
                     gpValue += nf @ (nGrad  + nGradT - prescribedValue)
 
-                GaussPointsValues[faceI][i] = gpValue
+                GaussPointsValues[faceI][i] = -gpValue
+
+            #print(GaussPointsValues[faceI][3])

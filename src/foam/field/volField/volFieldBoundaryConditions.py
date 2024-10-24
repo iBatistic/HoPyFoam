@@ -13,6 +13,7 @@ __all__ = ['volFieldBoundaryConditions']
 
 import re
 import numpy as np
+import sys
 
 class volFieldBoundaryConditions():
 
@@ -32,10 +33,10 @@ class volFieldBoundaryConditions():
             pass
 
         def fixedValueFromZeroGrad(w_diag, Q):
-            volFieldBoundaryConditions.LREcoeffs.fixedValue(w_diag, Q)
+            volFieldBoundaryConditions.LREcoeffs.zeroGradient(w_diag, Q)
 
         def pressureTraction(w_diag, Q):
-            volFieldBoundaryConditions.LREcoeffs.zeroGradient(w_diag, Q)
+            volFieldBoundaryConditions.LREcoeffs.fixedValue(w_diag, Q)
 
     # Evaluate is used to calculate values at boundaries after
     # cell centred values are calculated
@@ -48,9 +49,6 @@ class volFieldBoundaryConditions():
             pass
 
         def pressureTraction(*args):
-            pass
-
-        def fixedValueFromZeroGrad(*args):
             pass
 
         def fixedValue(psi, mesh, bdDict, patchName, boundaryValues):
@@ -71,33 +69,67 @@ class volFieldBoundaryConditions():
         def solidTraction(psi, mesh, bdDict, patchName, boundaryValues):
             boundary = mesh._boundary
             nInternalFaces = mesh.nInternalFaces
-            GaussPointsAndWeights = psi._facesGaussPointsAndWeights
-
 
             for patch in boundary:
                 if patch == patchName:
                     startFace = boundary[patch]['startFace']
                     nFaces = boundary[patch]['nFaces']
 
-                    for i in range(nFaces):
-                        faceI = startFace + i - nInternalFaces
+                    for faceI in range(startFace, startFace + nFaces):
 
                         # Reset boundary value to avoid accumulation
-                        boundaryValues[faceI] = np.array([0,0,0])
+                        boundaryValues[faceI- nInternalFaces] = np.array([0,0,0])
 
-                        # List of face Gauss points [1] and weights [0]
-                        faceGaussPoints = GaussPointsAndWeights[faceI][1]
-
-                        # Current face points interpolation stencil
-                        faceStencil = psi._facesInterpolationMolecule[startFace + i]
+                         # Current face points interpolation stencil
+                        faceStencil = psi._facesInterpolationMolecule[faceI]
 
                         # One Gauss point coincide with face centre if Ng is odd
                         # We use interpolation data of that point to calculate
                         # displacement at boundary face centre
                         if psi._GaussPointsNb % 2 != 0:
                             # Gauss point interpolation coefficient vector
-                            c = psi.LRE().coeffs()[startFace + i][psi._GaussPointsNb // 2]
+                            c = psi.LRE().boundaryCoeffs[faceI - nInternalFaces][psi._GaussPointsNb // 2]
 
                             for j, cellIndex in enumerate(faceStencil):
-                                boundaryValues[faceI] += np.array(psi._cellValues[cellIndex]) * c[j]
+                                boundaryValues[faceI- nInternalFaces] += np.array(psi._cellValues[cellIndex]) * c[j]
 
+        def fixedValueFromZeroGrad(psi, mesh, bdDict, patchName, boundaryValues):
+            pass
+            # boundary = mesh._boundary
+            # GaussPointsAndWeights = psi._facesGaussPointsAndWeights
+            #
+            # for patch in boundary:
+            #     if patch == patchName:
+            #         startFace = boundary[patch]['startFace']
+            #         nFaces = boundary[patch]['nFaces']
+            #
+            #         for faceI in range(startFace, startFace + nFaces):
+            #
+            #             # Reset boundary value to avoid accumulation
+            #             boundaryValues[faceI] = 0
+            #
+            #             nf = mesh.nf[faceI]
+            #
+            #             # List of face Gauss points [1] and weights [0]
+            #             faceGaussPoints = GaussPointsAndWeights[faceI][1]
+            #
+            #             # Current face points interpolation stencil
+            #             faceStencil = psi._facesInterpolationMolecule[faceI]
+            #
+            #             # One Gauss point coincide with face centre if Ng is odd
+            #             # We use interpolation data of that point to calculate
+            #             # displacement at boundary face centre
+            #             if psi._GaussPointsNb % 2 != 0:
+            #
+            #                 # Gauss point interpolation coefficient vector
+            #                 cx = psi.LRE().gradCoeffs()[faceI][psi._GaussPointsNb // 2]
+            #
+            #                 for j, cellIndex in enumerate(faceStencil):
+            #                     boundaryValues[faceI] += psi._cellValues[cellIndex] * (cx[j] @ nf)
+            #                     #print(boundaryValues[faceI])
+            #                     #print(psi._cellValues[cellIndex])
+            #                     # Boundary face centre is not included in face stencil list
+            #                     if j == (len(faceStencil) - 1):
+            #                         boundaryValues[faceI] /= -(cx[j + 1] @ nf)
+            #                         print(cx[j + 1] @ nf)
+                            #print(boundaryValues[faceI])print(boundaryValues[faceI])

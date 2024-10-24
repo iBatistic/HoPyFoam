@@ -38,35 +38,25 @@ mesh = fvMesh()
 
 solControl = solutionControl()
 
-# Read mechanichalProperties dict to get Lame parameters
-mu, lam = readMechanicalProperties()
-
 # N is Taylor polynomial degree, 1 is second-order, 2 is third-order...
 N = 1
 
-# Initialise displacement cell-centred vector field U
+# Initialise displacement vector field U, N is interpolation order
 U = volVectorField("U", mesh, readVectorField("U"),  N)
 
-# Displacement surface vector field at face Gauss points
-Uf = surfaceVectorField("Uf", U)
+volOverD = volVectorField("volOverD", mesh, readVectorField("volOverD"),  N)
 
-# Initialise pressure cell-centred scalar field p
-p = volScalarField("p", mesh, readScalarField("p"), N, True)
+# Initialise pressure scalar field p
+p = volScalarField("p", mesh, readScalarField("p"), N)
 
-# Surface scalar pressure field at face Gauss points
-pf = surfaceScalarField("pf", p, U, mu)
+# Initialise pressure scalar field p
+pBar = volScalarField("pBar", mesh, readScalarField("pBar"), N)
 
-# Initialise pressure correction cell-centred scalar field
+# Initialise pressure correction scalar field pCorr
 pCorr = volScalarField("pCorr", mesh, readScalarField("pCorr"), N)
 
-# Surface scalar pressure correction field at face Gauss points
-pCorrF = surfaceScalarField("pCorrF", pCorr)
-
-# Face pressure gradient, calculated using interpolation coefficients
-pGradF = surfaceVectorGradField("pGradF", p, pf)
-
-# Face pressure gradient, interpolated gradient at cell centre to face points
-pBarGradF = surfaceVectorBarGradField("pBarGradF", p, pf)
+# Read mechanichalProperties dict to get first and second Lame parameters
+mu, lam = readMechanicalProperties()
 
 while (solControl.loop()):
 
@@ -77,18 +67,9 @@ while (solControl.loop()):
     laplacianTranspose = fvm.construct(U, 'LaplacianTranspose', mu)
     bodyForce = fvm.construct(U, 'bodyForce')
 
-    # Update pressure value at face Gauss points
-    pf.evaluate()
-
-    # Explicit calculation of pressure grad using Gauss theorem
-    pressureGrad = fvc.construct(pf, 'grad')
-
-    #pCellGrad = pressureGrad._source.getArray()
-    #pCellGrad = [pCellGrad[i:i + 3].tolist() for i in range(0, len(pCellGrad), 3)]
-    # print("Cell grad for 9", pCellGrad[9])
-    # print("Cell grad for 19", pCellGrad[19])
-    # print("Cell grad for 29", pCellGrad[29])
-    # print("Cell grad for 39", pCellGrad[39])
+    # Explicit calculation of pressure grad, U and mu are required for
+    # boundaries with specified pressure from constitutive relation
+    pressureGrad = fvc.construct(p, 'grad', mu, U)
 
     momentumMatrix = laplacian + laplacianTranspose + bodyForce - pressureGrad
 
@@ -97,32 +78,37 @@ while (solControl.loop()):
 
     # Solve momentum matrix
     momentumMatrix.solve()
-
-    # Update displacement at face Gauss points
-    Uf.evaluate()
+    #sys.exit(1)
+    # Displacement interpolated to face Gauss points
+    UStar = interpolate.cellToFace(U)
 
     # Inverse of momentum matrix diagonal (tensor coefficient) multiplied with
     # cell volume
     volOverDiag = momentumMatrix.volOverD()
 
-    # Inverse of momentum matrix diagonal at face Gauss points
-    volOverDiagF = momentumMatrix.volOverDf()
-
-    # Update pressure field because of pressureTraction boundary
-    pf.evaluate()
+    # Interpolate volOverDiag to face Gauss points
+    pGamma = interpolate.diagToFace(volOverDiag, volOverD)
 
     # Face Gauss points pressure gradient using interpolation coefficients
-    pGradF.evaluate()
-    pBarGradF.evaluate()
+    # mu and U are used for pressureTraction boundaries to get pressure from
+    # constitutive relation
+    pressureGrad = interpolateGrad.cellToFace(p, mu, U)
+    barPressureGrad = interpolateCellGrad.cellToFace(p, mu, U, pBar)
+
+    pgf = surfaceVectorField("pGrad", pressureGrad, p)
+    pbgf = surfaceVectorField("pBarGrad", barPressureGrad, pBar)
+    pgf.write(solControl.time())
+    pbgf.write(solControl.time())
 
     # Rhie-Chow correction for interpolated velocity
-    UHat = np.copy(Uf._faceValues)
+    UHat = UStar
+
     for faceI in range(mesh.nFaces):
-         for gpI in range(U.Ng):
-                UHat[faceI][gpI] += volOverDiagF[faceI][gpI] @ (pBarGradF[faceI][gpI] - pGradF[faceI][gpI])
+        for gpI in range(U.Ng):
+            UHat[faceI][gpI] += pGamma[faceI][gpI] @ (barPressureGrad[faceI][gpI] - pressureGrad[faceI][gpI] )
 
     divU = fvc.construct(UHat, 'div', cellPsi=U)
-    laplacianPressureCorr = fvm.construct(pCorr, 'pCorrLaplacian', volOverDiagF)
+    laplacianPressureCorr = fvm.construct(pCorr, 'pCorrLaplacian', pGamma)
 
     pressureCorrMatrix = laplacianPressureCorr + divU
 
@@ -130,25 +116,20 @@ while (solControl.loop()):
     pressureCorrMatrix.solve()
 
     # Correct pressure field
-    p.correct(pCorr, relaxation=0.1)
-
-    for cell in range(len(pCorr._cellValues)):
-        pCorr._cellValues[cell][0] *= 0.1
+    p.addCorrection(pCorr, relaxation=0.09)
 
     # Correct displacement field
-    pCorrF.evaluate()
-    pCorrCellGrad = fvc.construct(pCorrF, 'grad')._source.getArray()
+    pCorrCellGrad = fvc.construct(pCorr, 'grad')._source.getArray()
     pCorrCellGrad = [pCorrCellGrad[i:i + 3].tolist() for i in range(0, len(pCorrCellGrad), 3)]
 
     for cellI, pC in enumerate(pCorrCellGrad):
-        U._cellValues[cellI] -= np.dot(volOverDiag[cellI], pC)
+       U._cellValues[cellI] -= volOverDiag[cellI] @ pC
 
     # Write results
     U.write(solControl.time())
-    p.write(solControl.time(), pf)
+    #p.evaluateBoundary()
+    p.write(solControl.time())
     pCorr.write(solControl.time())
-    pGradF.write(solControl.time())
-    pBarGradF.write(solControl.time())
 
     # Check convergence and stop iterating if convergence is meet
     #break

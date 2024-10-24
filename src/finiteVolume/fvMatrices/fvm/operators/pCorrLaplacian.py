@@ -38,6 +38,7 @@ class pCorrLaplacian():
         # Estimate the number of nonzeros to be expected on each row
         # This is not working as it should, input is how wide the diagonal, depends on numbering
         #A.setPreallocationNNZ(psi.Nn)
+        #diag = 0
 
         owner = mesh._owner
         neighbour = mesh._neighbour
@@ -66,7 +67,7 @@ class pCorrLaplacian():
                 gpW = faceGaussPointsAndWeights[0][i]
 
                 # Gauss point interpolation coefficient vector for each neighbouring cell
-                cx = psi.LRE().gradCoeffs()[faceI][i]
+                cx = psi.LRE().internalGradCoeffs[faceI][i]
 
                 # Loop over Gauss point interpolation stencil and add
                 # stencil cells contribution to matrix
@@ -75,11 +76,17 @@ class pCorrLaplacian():
                     # Owner and neighbour of current face
                     cellP = owner[faceI]
                     cellN = neighbour[faceI]
-                    value = gpW * magSf * (gamma[faceI][i] @ cx[j]) @ nf
-
+                    value = gpW * magSf * np.dot(np.dot(gamma[faceI][i], cx[j]), nf)
+                                        # (gamma[faceI][i] @ cx[j]) @ nf
                     # Store Laplace coefficients
                     A.setValues(cellP, cellIndex, value, ADD)
                     A.setValues(cellN, cellIndex, - value, ADD)
+
+                    # if cellIndex == 15:
+                    #     if cellP == 15:
+                    #         diag += value
+                    #     if cellN == 15:
+                    #         diag += -value
 
         source = A.createVecLeft()
         source.set(0.0)
@@ -94,7 +101,13 @@ class pCorrLaplacian():
 
             # Call corresponding patch function
             patchContribution = eval("pCorrLaplacianBoundaryConditions." + patchType)
-            patchContribution(self, psi, mesh, source, A, patch, gamma)
+            patchContribution(self, psi, mesh, source, A, patch, gamma)#, diag)
+
+        #val = 200
+        #diag = A.getValue(15, 15)  # )zeroRows([15], diag=1.0)
+        #print(diag)
+        #A.setValues(15, 15, diag, ADD )
+        #source.setValue(15, diag * val)
 
         # Finish matrix assembly
         A.assemble()
@@ -109,12 +122,13 @@ class pCorrLaplacianBoundaryConditions(pCorrLaplacian):
         pass
 
     def zeroGradient(self, *args):
+        """Zero normal gradient boundary condition"""
         pass
 
     def fixedValue(self, psi, mesh, source, A, patch, gamma):
-        '''
-        Zero correction for pressure field, prescribed value is 0
-        '''
+        """
+        Fixed value - zero correction for pressure field, prescribed value is 0
+        """
 
         # Preliminaries
         startFace = mesh.boundary[patch]['startFace']
@@ -145,13 +159,17 @@ class pCorrLaplacianBoundaryConditions(pCorrLaplacian):
                 gpW = faceGaussPointsAndWeights[0][i]
 
                 # Gauss point interpolation coefficient vector for each neighbouring cell
-                cx = psi.LRE().gradCoeffs()[faceI][i]
+                cx = psi.LRE().boundaryGradCoeffsGhost[faceI - mesh.nInternalFaces][i]
 
                 # Loop over Gauss point interpolation stencil and add
                 # stencil cells contribution to matrix
                 for j, cellIndex in enumerate(faceStencil):
 
                     cellP = owner[faceI]
-                    value = gpW * magSf * (gamma[faceI][i] @ cx[j]) @ nf
+                    value = gpW * magSf * np.dot(np.dot(gamma[faceI][i], cx[j]), nf)
 
                     A.setValues(cellP, cellIndex, value, ADD)
+
+                    # if cellP == 15:
+                    #     if cellIndex == 15:
+                    #         diag += value

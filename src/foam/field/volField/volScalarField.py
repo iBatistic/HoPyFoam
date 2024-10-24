@@ -24,17 +24,17 @@ class volScalarField(volField):
     # Field dimensions
     _dimensions = 1
 
-    def __init__(self, fieldName, mesh, scalarFieldEntries, N=3):
+    def __init__(self, fieldName, mesh, scalarFieldEntries, N=3, cellLRE=False):
 
         # Initialise volField
-        super().__init__(fieldName, mesh, scalarFieldEntries, N)
+        super().__init__(fieldName, mesh, scalarFieldEntries, N, cellLRE)
 
     @property
     def dim(self) -> int:
         return self._dimensions
 
     # Write field in OpenFOAM format
-    def write(self, timeValue):
+    def write(self, timeValue, psif=None):
         print(f"Writing {self._fieldName} field for time {timeValue} s")
 
         filePath = str(timeValue) + "/" + self._fieldName
@@ -64,15 +64,28 @@ class volScalarField(volField):
                 patchType = self._boundaryConditionsDict[patch]['type']
                 file.write(f'\t{patch}\n\t{{\n\t\ttype\t{patchType};\n')
 
-                if patchType == 'fixedValue' or patchType == 'analyticalFixedValue':
+                boundary = self._mesh._boundary
+                nInternalFaces = self._mesh.nInternalFaces
+                startFace = boundary[patch]['startFace']
+                nFaces = boundary[patch]['nFaces']
+
+                if patchType == 'fixedValue':
                     value = convert_to_float(self._boundaryConditionsDict[patch]['value']['uniform'])
                     file.write(f'\t\tvalue\tuniform {value};\n')
 
-                    if patchType == 'analyticalFixedValue':
-                        warnings.warn(f"At boundaries analyticalFixedValue has some dummy value from 0\n "
-                                      f"This can mess up postprocessing, however to write exact values "
-                                      f"at face centre integration\n should be performed at each boundary "
-                                      f"face using values at Gauss points, This can be added later if needed...\n", stacklevel=3)
+                if patchType == 'fixedValueFromZeroGrad':
+                    file.write(f'\t\tvalue\tnonuniform List<scalar>\n{nFaces}\n(\n')
+                    for i in range(nFaces):
+                        faceI = startFace + i - nInternalFaces
+                        file.write(f'{" ".join(str(x) for x in psif[startFace + i][self.Ng//2])}\n')
+                    file.write(")\n;\n")
+
+                if patchType == 'pressureTraction':
+                    file.write(f'\t\tvalue\tnonuniform List<scalar>\n{nFaces}\n(\n')
+                    for i in range(nFaces):
+                        faceI = startFace + i - nInternalFaces
+                        file.write(f'{" ".join(str(x) for x in psif[startFace + i][self.Ng//2])}\n')
+                    file.write(")\n;\n")
 
                 file.write(f'\t}}\n')
 

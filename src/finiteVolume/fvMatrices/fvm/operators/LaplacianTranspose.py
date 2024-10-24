@@ -68,7 +68,7 @@ class LaplacianTranspose():
                 gpW = faceGaussPointsAndWeights[0][i]
 
                 # Gauss point interpolation coefficient vector for each neighbouring cell
-                cx = psi.LRE().gradCoeffs()[faceI][i]
+                cx = psi.LRE().internalGradCoeffs[faceI][i]
 
                 # Loop over Gauss point interpolation stencil and add
                 # stencil cells contribution to matrix
@@ -110,7 +110,6 @@ class LaplacianTranspose():
         A.assemble()
         source.assemble()
 
-        # A.view(PETSc.Viewer("APETSc.mat", 'w'))
         return source, A
 
 class LaplacianTransposeBoundaryConditions(LaplacianTranspose):
@@ -158,7 +157,7 @@ class LaplacianTransposeBoundaryConditions(LaplacianTranspose):
                 gpW = faceGaussPointsAndWeights[0][i]
 
                 # Gauss point interpolation coefficient vector for each neighbouring cell
-                cx = psi.LRE().gradCoeffs()[faceI][i]
+                cx = psi.LRE().boundaryGradCoeffsGhost[faceI - mesh.nInternalFaces][i]
 
                 # Loop over Gauss point interpolation stencil and add
                 # stencil cells contribution to matrix

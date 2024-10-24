@@ -22,4 +22,4 @@ class fvc(fvMatrix):
         operator = eval(operatorName + "." + "construct")
 
         # Operator function returns A,b
-        return operator(psi, gamma, cellPsi)
+        return operator(psi, cellPsi)

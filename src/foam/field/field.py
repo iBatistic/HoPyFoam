@@ -16,6 +16,10 @@ class field():
     def __init__(self, fieldName="None"):
         self._fieldName = fieldName
 
+    @property
+    def fieldName(self):
+        return self._fieldName
+
     # foamFile banner. Used when writing fields in OF format.
     def foamFileDict(self, fieldType, fieldName, timeValue) -> str:
         banner = 'FoamFile\n{\n    version     2.0;\n    format      ascii;\n'

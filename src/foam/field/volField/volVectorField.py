@@ -24,17 +24,18 @@ class volVectorField(volField):
     # Field dimensions
     _dimensions = 3
 
-    def __init__(self, fieldName, mesh, vectorFieldEntries, N=3):
+    def __init__(self, fieldName, mesh, vectorFieldEntries, N=3, cellLRE=False):
 
         # Initialise volField
-        super().__init__(fieldName, mesh, vectorFieldEntries, N)
+        super().__init__(fieldName, mesh, vectorFieldEntries, N, cellLRE)
 
     @property
     def dim(self) -> int:
+        """Return the dimension of the vector field."""
         return self._dimensions
 
-    # Write field in OpenFOAM format
     def write(self, timeValue):
+        """ Write field to disc in OpenFOAM format"""
         print(f"Writing {self._fieldName} field for time {timeValue} s")
 
         filePath = str(timeValue) + "/" + self._fieldName

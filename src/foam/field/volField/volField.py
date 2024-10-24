@@ -16,12 +16,13 @@ from src.foam.field import field
 from src.foam.foamFileParser import *
 from src.foam.field.volField import *
 from src.foam.field import localRegressionEstimator
+
 from src.foam.field.volField.volFieldBoundaryConditions import *
 from src.foam.decorators import timed
 
 class volField(field, volFieldBoundaryConditions):
 
-    def __init__(self, fieldName, mesh, fieldEntries, N):
+    def __init__(self, fieldName, mesh, fieldEntries, N, cellLRE=False):
 
         super().__init__(fieldName)
 
@@ -70,7 +71,7 @@ class volField(field, volFieldBoundaryConditions):
 
         # Local Regression Estimator
         # Coefficients are calculated on object initialisation
-        self._LRE = localRegressionEstimator(self, mesh)
+        self._LRE = localRegressionEstimator(self, mesh, cellLRE)
 
     def LRE(self) -> localRegressionEstimator:
         return self._LRE
@@ -179,7 +180,7 @@ class volField(field, volFieldBoundaryConditions):
 
         return boundaryValues
 
-    def addCorrection(self, other, relaxation):
+    def correct(self, other, relaxation):
         for cellI in range(self._mesh.nCells):
             self._cellValues[cellI] += np.array(other._cellValues[cellI]) * relaxation
 
