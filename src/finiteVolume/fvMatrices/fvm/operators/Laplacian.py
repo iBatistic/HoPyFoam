@@ -79,7 +79,7 @@ class Laplacian():
                 gpW = faceGaussPointsAndWeights[0][i]
 
                 # Gauss point interpolation coefficient vector for each neighbouring cell
-                cx = psi.LRE().internalGradCoeffs()[faceI][i]
+                cx = psi.LRE().internalGradCoeffs[faceI][i]
 
                 # Loop over Gauss point interpolation stencil and add
                 # stencil cells contribution to matrix

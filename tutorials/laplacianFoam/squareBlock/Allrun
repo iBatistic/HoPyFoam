@@ -16,6 +16,16 @@ else
     fi
 fi
 
+# Check virtual environment version    
+if [[ -z "$VIRTUAL_ENV" ]]; then
+    echo "Error: No virtual environment is active!" >&2
+    exit 1
+elif [[ "$(basename "$VIRTUAL_ENV")" != "venv-HoPyFoam" ]]; then
+    echo "Error: Wrong virtual environment is active!"
+    echo "Expected: venv-HoPyFoam, but found: $(basename "$VIRTUAL_ENV")" >&2
+    exit 1
+fi
+
 ./Allclean
 
 blockMesh > /dev/null 2>&1

@@ -33,7 +33,7 @@ mesh = fvMesh()
 solControl = solutionControl()
 
 # Initialise scalar field T, N is interpolation order
-T = volScalarField("T", mesh, readScalarField("T"), N=3)
+T = volScalarField("T", mesh, readScalarField("T"), N=1)
 
 # Read diffusivity from transportProperties dict
 gammaDimensions, gammaValue = readTransportProperties('DT')
@@ -43,10 +43,13 @@ while(solControl.loop()):
     print(f'Time = {solControl.time()} \n')
 
     # Assemble the Laplacian matrix
-    laplacianMatrix = fvm.construct(T, 'Laplacian', gammaValue)
+    laplacian = fvm.construct(T, 'Laplacian', gammaValue)
+    bodyForce = fvm.construct(T, 'bodyForce')
 
-    # Solve Laplacian matrix
-    laplacianMatrix.solve()
+    Matrix = laplacian + bodyForce
+
+    # Solve system matrix
+    Matrix.solve()
 
     # Write results
     T.write(solControl.time())
