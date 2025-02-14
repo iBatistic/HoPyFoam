@@ -13,21 +13,29 @@ is similar to one from the [OpenFOAM](https://www.openfoam.com/) library.
 ### Installation
 
 1. Clone the directory with `git clone git@github.com:iBatistic/HoPyFoam.git`
-2. Required python are listed in `requirements.txt` and can be installed easily with `venv`:
+2. Install the necessary packages:
+    ```
+    sudo apt update
+    sudo apt install -y build-essential python3-dev python3-pip cmake gfortran \
+    libopenblas-dev liblapack-dev libmpich-dev libhdf5-dev petsc-dev
+    ```
+3. Required python are listed in `requirements.txt` and can be installed easily with `venv`:
     ```
     virtualenv venv-HoPyFoam
     source venv-HoPyFoam/bin/activate
     pip install -r requirements.txt
     ```
 
-3. Install some of the OpenFOAM.COM distribution using the instructions on this [link](https://develop.openfoam.com/Development/openfoam/-/wikis/precompiled/debian). OpenFOAM is required for mesh generation and post-processing functionalities.
+4. Install some of the OpenFOAM.COM distribution using the instructions on this [link](https://develop.openfoam.com/Development/openfoam/-/wikis/precompiled/debian). OpenFOAM is required for mesh generation and post-processing functionalities.
 
-4. To run cases, first source OpenFOAM shell session and then activate Python environment:
+5. To run cases, first source OpenFOAM shell session and then activate Python environment:
     ```
     openfoam2312
     source venv-HoPyFoam/bin/activate
     ```
     All tutorial cases have a corresponding `./Allrun` script to run them.
+
+    Installation is tested on Ubuntu 24.04 and 22.04.
 
 ### License
 

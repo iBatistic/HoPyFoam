@@ -364,7 +364,7 @@ def readScalarField(fileName, time=ZERO) -> tuple[str, list, dict]:
             file = remove_foamFile_dict(file)
             file = re.sub(r';', '', file)
             file = [line for line in file.splitlines() if line.strip()]
-
+            
             # Remove dimensions line and internalField(initial field value) line, pass boundaryField line
             for line in file:
                 if line.startswith('internalField'):
@@ -376,7 +376,7 @@ def readScalarField(fileName, time=ZERO) -> tuple[str, list, dict]:
                     pass
                 else:
                     data.append(line)
-
+            
             # This part of code reads nonuniform cell field
             if (valueType == 'nonuniform'):
 
@@ -384,12 +384,12 @@ def readScalarField(fileName, time=ZERO) -> tuple[str, list, dict]:
                 lastIndex = data.index(')')
 
                 values = data[firstIndex:lastIndex]
-
+                
                 for index, cellVal in enumerate(values):
                     cellValues.append([convert_to_float(cellVal)])
                 # Just clean empty list which is constructed on initialisation
                 cellValues = [sublist for sublist in cellValues if sublist]
-
+                
                 del data[firstIndex:lastIndex]
 
                 numberOfCells = data.pop(0)
@@ -398,7 +398,7 @@ def readScalarField(fileName, time=ZERO) -> tuple[str, list, dict]:
                                       f' required number {convert_to_int(numberOfCells)}')
                 # Remove ( and ) brackets inside which cell data was stored
                 del data[0:2]
-
+                
             elif (valueType == 'uniform'):
                 cellValues[0] = ([convert_to_float(initialValue)])
             else:
@@ -414,18 +414,16 @@ def readScalarField(fileName, time=ZERO) -> tuple[str, list, dict]:
             # Extract patch name above curly brackets
             patchNames = re.sub(r'{[^}]*}*', ' ', file)
             patchNames = patchNames.split()
-
+            
             for i in range(len(patchNames)):
                 patchDict = patchDicts[i].split()
-
-                if (patchDict[1] == 'empty'):
+                if (patchDict[1] == 'empty' or patchDict[1] == 'zeroGradient'):
                     boundaryConditionsDict.update({patchNames[i]: {"type": patchDict[1]}})
                 else:
                     value = convert_to_float(patchDict[4])
                     boundaryConditionsDict.update({patchNames[i]: \
                                                        {"type": patchDict[1],
                                                        patchDict[2]: {patchDict[3]: value}}})
-
     except SyntaxError as e:
         print(f'Syntax error: {e}')
         sys.exit(1)
@@ -435,12 +433,12 @@ def readScalarField(fileName, time=ZERO) -> tuple[str, list, dict]:
     except Exception as e:
         print(f"An error occured: {e}")
         sys.exit(1)
-
+    
     # Clean dataType from brackets and put dimensions in list
     dataType = dataType.split()[1:]
     for index, element in enumerate(dataType):
         dataType[index] = re.sub(r'\D', '', element)
-
+    
     return cellValues, dataType, boundaryConditionsDict
 
 def readVectorField(fileName, time=ZERO) -> tuple[str, list, dict]:

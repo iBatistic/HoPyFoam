@@ -157,7 +157,7 @@ class localRegressionEstimator():
                 pos = int(0)
                 for I in range(N + 1):
                     for J in range(N - I + 1):
-                        fact = np.math.factorial(I) * np.math.factorial(J)
+                        fact = math.factorial(I) * math.factorial(J)
                         Q[pos, i] = (pow(neiC[0] - gpI[0], I) * pow(neiC[1] - gpI[1], J) * (1.0 / fact))
                         pos += 1;
 
@@ -254,7 +254,7 @@ class localRegressionEstimator():
                 pos = int(0)
                 for I in range(N + 1):
                     for J in range(N - I + 1):
-                        fact = np.math.factorial(I) * np.math.factorial(J)
+                        fact = math.factorial(I) * math.factorial(J)
                         Q[pos, i] = pow(neiC[0] - mesh.C[cellI][0], I) * pow(neiC[1] - mesh.C[cellI][1], J) * (1.0 / fact)
                         pos += 1;
 
@@ -280,7 +280,7 @@ class localRegressionEstimator():
                             pos = int(0)
                             for I in range(N + 1):
                                 for J in range(N - I + 1):
-                                    fact = np.math.factorial(I) * np.math.factorial(J)
+                                    fact = math.factorial(I) * math.factorial(J)
                                     Q[pos, -1] = pow(neiC[0] - mesh.C[cellI][0], I) * pow(neiC[1] - mesh.C[cellI][1], J) * (1.0 / fact)
                                     pos += 1;
 
@@ -295,7 +295,7 @@ class localRegressionEstimator():
                             pos = int(0)
                             for I in range(N + 1):
                                 for J in range(N - I + 1):
-                                    fact = np.math.factorial(I) * np.math.factorial(J)
+                                    fact = math.factorial(I) * math.factorial(J)
                                     Q[pos, -1] = pow(neiC[0] - mesh.C[cellI][0], I) * pow(neiC[1] - mesh.C[cellI][1],J) * (1.0 / fact)
                                     pos += 1;
 
@@ -308,7 +308,7 @@ class localRegressionEstimator():
                             pos = int(0)
                             for I in range(N + 1):
                                 for J in range(N - I + 1):
-                                    fact = np.math.factorial(I) * np.math.factorial(J)
+                                    fact = math.factorial(I) * math.factorial(J)
                                     Q[pos, -2] = pow(neiC[0] - mesh.C[cellI][0], I) * pow(neiC[1] - mesh.C[cellI][1], J) * (1.0 / fact)
                                     pos += 1;
 
