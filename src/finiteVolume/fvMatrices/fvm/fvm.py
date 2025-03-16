@@ -8,7 +8,7 @@ Description
 
 """
 __author__ = 'Ivan Batistić & Philip Cardiff'
-__email__ = 'ibatistic@fsb.hr, philip.cardiff@ucd.ie'
+__email__ = 'ibatistic@fsb.unizg.hr, philip.cardiff@ucd.ie'
 
 from src.finiteVolume.fvMatrices.fvMatrix import fvMatrix
 from src.finiteVolume.fvMatrices.fvm.operators import *
@@ -22,4 +22,4 @@ class fvm(fvMatrix):
         operator = eval(operatorName + "." + "construct")
 
         # Operator function returns A,b
-        return operator(psi, gamma)
+        return operator(psi, gamma, *args)

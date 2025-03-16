@@ -33,7 +33,7 @@ class fvMatrix():
 
     @timed
     def solve(self):
-        print(f'Solving system of equations for field {self._psi._fieldName}\n')
+        #print(f'Solving system of equations for field {self._psi._fieldName}\n')
 
         # Create Krylov Subspace Solver
         ksp = PETSc.KSP()
@@ -57,7 +57,7 @@ class fvMatrix():
         # Create right vector and solve system of equations
         x = self._A.createVecRight()
         ksp.solve(self._source, x)
-        print("\t Iterations= %d, residual norm = %g \n" % (ksp.its, ksp.norm))
+        print(f'\t{self._psi._fieldName}:    Iterations= {ksp.its}, residual norm = {ksp.norm}')
 
         # Get solution
         sol = x.getArray()
@@ -85,6 +85,12 @@ class fvMatrix():
         source = self._source - other._source
         return fvMatrix(self._psi, source, A)
 
+    def __neg__(self):
+        '''
+        Return a new fvMatrix instance representing the negation of this instance.
+        '''
+        return fvMatrix(self._psi, -self._source, -self._A)
+
     def print(self, printPrecision=15, LHS=True, RHS=True):
         self._A.convert('dense')
         T = self._A.getDenseArray()
@@ -92,11 +98,12 @@ class fvMatrix():
             self._source.view()
 
         if LHS:
-            np.set_printoptions(precision=printPrecision, suppress=True)
-            wr = [T[i:i + 1].tolist() for i in range(0, len(T), 1)]
+            np.set_printoptions(precision=printPrecision, suppress=True, linewidth=np.inf, threshold=np.inf)
+            #wr = [T[i:i + 1].tolist() for i in range(0, len(T), 1)]
 
-            for item in wr:
-                print(np.array(item))
+            #for item in wr:
+            #    print(np.array(item))
+            print(np.array(T))
 
     def volOverD(self):
         '''

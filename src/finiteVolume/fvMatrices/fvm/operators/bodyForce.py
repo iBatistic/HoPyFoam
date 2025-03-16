@@ -6,7 +6,7 @@
                 |___|
 """
 __author__ = 'Ivan Batistić & Philip Cardiff'
-__email__ = 'ibatistic@fsb.hr, philip.cardiff@ucd.ie'
+__email__ = 'ibatistic@fsb.unizg.hr, philip.cardiff@ucd.ie'
 __all__ = ['bodyForce']
 
 
@@ -63,13 +63,14 @@ class bodyForce():
         # each cv force has corresponding row
         bodyForce = readBodyForce(self.BODY_FORCE_FILE, psi.dim)
 
-        for cellI in range(mesh.nCells):
-            # Cell volume
-            V = mesh.V[cellI]
+        if bodyForce is not None:
+            for cellI in range(mesh.nCells):
+                # Cell volume
+                V = mesh.V[cellI]
 
-            # Add body force to source vector
-            source.setValues(range(cellI * psi.dim, cellI * psi.dim + psi.dim),
-                             bodyForce[cellI] * V, ADD)
+                # Add body force to source vector
+                source.setValues(range(cellI * psi.dim, cellI * psi.dim + psi.dim),
+                                 bodyForce[cellI] * V, ADD)
 
         # Finish matrix assembly
         A.assemble()
@@ -103,12 +104,13 @@ class bodyForce():
         # each cv force has corresponding row
         bodyForce = readBodyForce(self.BODY_FORCE_FILE, psi.dim)
 
-        for cellI in range(mesh.nCells):
-            # Cell volume
-            V = mesh.V[cellI]
+        if bodyForce is not None:
+            for cellI in range(mesh.nCells):
+                # Cell volume
+                V = mesh.V[cellI]
 
-            # Add body force to source vector
-            source.setValues(cellI, bodyForce[cellI] * V, ADD)
+                # Add body force to source vector
+                source.setValues(cellI, bodyForce[cellI] * V, ADD)
 
         # Finish matrix assembly
         A.assemble()

@@ -6,7 +6,7 @@
                 |___|
 """
 __author__ = 'Ivan Batistić & Philip Cardiff'
-__email__ = 'ibatistic@fsb.hr, philip.cardiff@ucd.ie'
+__email__ = 'ibatistic@fsb.unizg.hr, philip.cardiff@ucd.ie'
 __all__ = ['pCorrLaplacian']
 
 from src.foam.foamFileParser import *
@@ -17,7 +17,7 @@ ADD = PETSc.InsertMode.ADD_VALUES
 class pCorrLaplacian():
 
     @classmethod
-    def construct(self, psi, gamma):
+    def construct(self, psi, gamma, *args):
 
         mesh = psi._mesh
         nCells = mesh.nCells

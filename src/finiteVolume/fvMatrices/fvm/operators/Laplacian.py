@@ -17,7 +17,7 @@ ADD = PETSc.InsertMode.ADD_VALUES
 class Laplacian():
 
     @classmethod
-    def construct(self, psi, gamma):
+    def construct(self, psi, gamma, *args):
         try:
             if (psi.dim == 1):
                 return self.scalarLaplacian(psi, gamma)

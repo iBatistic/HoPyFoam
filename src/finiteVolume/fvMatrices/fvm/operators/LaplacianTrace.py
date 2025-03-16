@@ -17,7 +17,7 @@ ADD = PETSc.InsertMode.ADD_VALUES
 class LaplacianTrace():
 
     @classmethod
-    def construct(self, psi, gamma):
+    def construct(self, psi, gamma, *args):
 
         mesh = psi._mesh
         nCells = mesh.nCells

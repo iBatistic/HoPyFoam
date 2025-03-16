@@ -299,7 +299,7 @@ def convert_to_float(string, check=False):
     else:
         return string
 
-def readMechanicalProperties(path=MECHANICALPROPERTIES) -> tuple[float, float]:
+def readMechanicalProperties(path=MECHANICALPROPERTIES, convertToLameCoeffs=True) -> tuple[float, float]:
 
     print(f"Reading mechanicalProperties dict\n")
 
@@ -330,6 +330,10 @@ def readMechanicalProperties(path=MECHANICALPROPERTIES) -> tuple[float, float]:
     except Exception as e:
         print(f"An error occured: {e}")
         sys.exit(1)
+
+    if not convertToLameCoeffs:
+        print(f"E: {E:.5f}\n, nu: {nu:.5f}")
+        return E, nu
 
     mu = E / (2.0*(1.0 + nu))
 

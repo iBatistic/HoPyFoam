@@ -1,12 +1,12 @@
 // Gmsh .geo file to create a 2D heat conduction model with extrusion
 
 // Mesh spacing parameter
-dx = 0.01; // Mesh size
+dx = 0.7; // Mesh size
 
 // Dimensions
-L = 1;  // Length in x-direction
-W = 1;  // Width in y-direction
-d = 0.01; // Extrusion depth in z-direction
+L = 10;  // Length in x-direction
+W = 10;  // Width in y-direction
+d = 1; // Extrusion depth in z-direction
 
 // Define points
 Point(1) = {0, 0, 0, dx};    // Bottom-left corner
@@ -25,7 +25,7 @@ Line Loop(5) = {1, 2, 3, 4};
 Plane Surface(6) = {5};
 
 // Transfinite meshing
-Transfinite Line {1, 2, 3, 4} = 8 Using Progression 1; // Control mesh density
+//Transfinite Line {1, 2, 3, 4} = 8 Using Progression 1; // Control mesh density
 Transfinite Surface {6}; // Structured meshing, keeps control over triangulation
 
 // Extrude to create volume
@@ -36,7 +36,8 @@ Extrude {0, 0, d} {
 }
 
 // Define physical groups for boundary conditions
-Physical Surface("frontAndBack") = {28, 6};   // Front and back surface
+Physical Surface("back") = {28};   // Front and back surface
+Physical Surface("front") = {6};   // Front and back surface
 Physical Surface("top") = {19};    // Top surface
 Physical Surface("bottom") = {27}; // Bottom surface
 Physical Surface("left") = {15};   // Left surface

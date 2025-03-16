@@ -6,10 +6,10 @@
                 |___|
 Description
     Calculate and write body force distribution according to MMS.
-    Example is taken from: 
+    Example is taken from:
     "Method of manufactured solutions code verification of elastostatic solid
      mechanics problems in a commercial finite element solver"
-     Kenneth I. Aycock, Nuno Rebelo, Brent A. Craven, 
+     Kenneth I. Aycock, Nuno Rebelo, Brent A. Craven,
      Computers and Structures, 2020
 """
 
@@ -35,7 +35,7 @@ def bodyForceFunc(x,y,z=0):
 
     C = 0.01
     n = 2
-	
+
     d2Ux_DxDx = -C * pow(np.pi, 2) * pow(n, 2) * np.sin(np.pi*n*x) * np.sin(np.pi*n*y)
     d2Ux_DyDy = -C * pow(np.pi, 2) * pow(n, 2) * np.sin(np.pi*n*x) * np.sin(np.pi*n*y)
     d2Ux_DyDx = C * pow(np.pi, 2) * pow(n, 2) * np.cos(np.pi*n*x) * np.cos(np.pi*n*y)
@@ -75,6 +75,3 @@ for patch in mesh.boundary:
 
                 file.write(f"{bodyForce[0]}    {bodyForce[1]}    {bodyForce[2]}\n")
 file.close()
-
-
-
