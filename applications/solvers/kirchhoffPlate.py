@@ -33,39 +33,39 @@ mesh = fvMesh()
 
 solControl = solutionControl()
 
+# Read mechanichalProperties dict to get Young modulus and Poisson's ratio
+E, nu = readMechanicalProperties(convertToLameCoeffs=False)
+
+# Read solidProperties dict to get plate thickness, nCorrectors and altTol.
+h, nCorrectors, alternativeTolerance = readSolidProperties()
+
+bendingStiffness = E*pow(h,3)/(12*(1-pow(nu,2)))
+
 # Initialise deflection scalar field w, N is interpolation order
 w = volScalarField("w", mesh, readScalarField("w"),  N=3)
 
 # Initialise moment sum  scalar field M, N is interpolation order
 M = volScalarField("M", mesh, readScalarField("M"),  N=3)
 
-# Read mechanichalProperties dict to get Young modulus and Poisson's ratio
-E, nu = readMechanicalProperties(convertToLameCoeffs=False)
-
-h=0.1
-bendingStiffness = E*pow(h,3)/(12*(1-pow(nu,2)))
-
 while (solControl.loop()):
 
     print(f'Time = {solControl.time()} \n')
 
     iCorr = 0
+    print("\tCorr, relRes M, relRes w, solRes M, solRes w")
     while True:
+
         # Assemble the momentum sum matrix
         laplacianM = fvm.construct(M, 'Laplacian', 1.0)
         pressure = fvm.construct(M, 'bodyForce')
 
         momentumMatrix = -laplacianM - pressure
 
-        #momentumMatrix.print(LHS=False,RHS=True)
-
         # Relax momentum sum matrix
-        #momentumMatrix.relax(relaxation=0.95)
+        momentumMatrix.relax(relaxation=1)
 
         # Solve momentum sum matrix
-        momentumMatrix.solve()
-
-        #print(M._cellValues)
+        solverPerfM = momentumMatrix.solve()
 
         # Assemble the deflection matrix
         laplacianW = fvm.construct(w, 'Laplacian', bendingStiffness)
@@ -73,17 +73,36 @@ while (solControl.loop()):
 
         wMatrix = laplacianW + sourceW
 
-        #wMatrix.print(LHS=False, RHS=True)
-
         # Relax deflection matrix
-        #wMatrix.relax(relaxation=0.95)
+        wMatrix.relax(relaxation=1)
 
         # Solve deflection matrix
-        wMatrix.solve()
+        solverPerfW = wMatrix.solve()
+
+        momentumResidual =\
+            np.max\
+            (
+                np.abs(np.array(M._cellValues)-np.array(M.prevIter))
+                / max(np.max(np.abs(M._cellValues)), 1e-10)
+            )
+
+        wResidual =\
+            np.max\
+            (
+                np.abs(np.array(w._cellValues) - np.array(w.prevIter))
+                / max(np.max(np.abs(w._cellValues)), 1e-10)
+            )
+
+        print(f'\tIter {iCorr}, {momentumResidual:.5g}, {wResidual:.5g}, '
+              f'{solverPerfM["residualNorm"]:.5g}, '
+              f'{solverPerfW["residualNorm"]:.5g}')
 
         iCorr += 1
-        if iCorr > 12:
+        if (iCorr > nCorrectors or
+                (momentumResidual < alternativeTolerance
+                 and wResidual < alternativeTolerance)):
             break;
+
 
     # Write results
     w.write(solControl.time())

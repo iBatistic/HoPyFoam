@@ -57,13 +57,13 @@ class volField(field, volFieldBoundaryConditions):
         self._cellValues = self.initCellValues(mesh, cellValuesData, self.dim)
         self._boundaryValues = self.initBoundaryValues(mesh, self.dim)
 
+        # Store previous iteration cell values, used for residual calculation and under-relaxation
+        self._prevIter =  self._cellValues
+
         # Make interpolation molecule for faces and cell centres
         print(f"Calculating interpolation stencil for field {self._fieldName}")
         self._facesInterpolationMolecule = self.makeFacesInterpolationMolecule()
         self._cellsInterpolationMolecule = self.makeCellsInterpolationMolecule()
-
-        # for item in self._facesInterpolationMolecule:
-        #     print(len(item),"--->",  item)
 
         # Make Gauss points on faces and corresponding weights
         print(f"Calculating Gauss integration points for field {self._fieldName}")
@@ -75,6 +75,11 @@ class volField(field, volFieldBoundaryConditions):
 
     def LRE(self) -> localRegressionEstimator:
         return self._LRE
+
+    # Return previous iteration field (only cell values)
+    @property
+    def prevIter(self) -> np.ndarray:
+        return self._prevIter
 
     # Return number of terms in Taylor expression
     # For two-dimensional cases we are ignoring terms related to z coordinate!

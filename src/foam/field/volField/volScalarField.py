@@ -35,7 +35,7 @@ class volScalarField(volField):
 
     # Write field in OpenFOAM format
     def write(self, timeValue, psif=None):
-        print(f"Writing {self._fieldName} field for time {timeValue} s")
+        print(f"\nWriting {self._fieldName} field for time {timeValue} s")
 
         filePath = str(timeValue) + "/" + self._fieldName
 

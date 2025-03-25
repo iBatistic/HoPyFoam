@@ -36,8 +36,7 @@ Extrude {0, 0, d} {
 }
 
 // Define physical groups for boundary conditions
-Physical Surface("back") = {28};   // Front and back surface
-Physical Surface("front") = {6};   // Front and back surface
+Physical Surface("frontAndBack") = {28, 6};   // Front and back surface
 Physical Surface("top") = {19};    // Top surface
 Physical Surface("bottom") = {27}; // Bottom surface
 Physical Surface("left") = {15};   // Left surface

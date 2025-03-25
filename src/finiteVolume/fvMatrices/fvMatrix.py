@@ -32,7 +32,7 @@ class fvMatrix():
         return self(psi, source, A)
 
     @timed
-    def solve(self):
+    def solve(self) -> float:
         #print(f'Solving system of equations for field {self._psi._fieldName}\n')
 
         # Create Krylov Subspace Solver
@@ -57,10 +57,18 @@ class fvMatrix():
         # Create right vector and solve system of equations
         x = self._A.createVecRight()
         ksp.solve(self._source, x)
-        print(f'\t{self._psi._fieldName}:    Iterations= {ksp.its}, residual norm = {ksp.norm}')
 
+        solverPerf = {
+            'iterations': ksp.its,
+            'residualNorm': ksp.norm
+        }
         # Get solution
+
         sol = x.getArray()
+
+        # Store values to prevIter field
+        self._psi._prevIter = self._psi._cellValues
+
         # Solution is one big array, here it is divided into sublist to create
         # vector or scalar value for each cell
         dim = self._psi.dim
@@ -68,6 +76,8 @@ class fvMatrix():
 
         # Evaluate boundary values
         self._psi.evaluateBoundary()
+
+        return solverPerf
 
     def __add__(self, other):
         '''

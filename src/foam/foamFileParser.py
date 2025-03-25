@@ -16,6 +16,7 @@ import numpy as np
 CONSTANT = 'constant/'
 POLYMESH = CONSTANT + 'polyMesh'
 MECHANICALPROPERTIES = CONSTANT + 'mechanicalProperties'
+SOLIDPROPERTIES= CONSTANT + 'solidProperties'
 SYSTEM = 'system'
 ZERO = '0'
 
@@ -299,6 +300,41 @@ def convert_to_float(string, check=False):
     else:
         return string
 
+def readSolidProperties(path=SOLIDPROPERTIES) -> tuple[float, float, float]:
+    print(f"Reading solidProperties dict\n")
+
+    try:
+        with (open(path) as f):
+
+            file = f.read()
+            file = remove_cpp_comments(file)
+            file = remove_foamFile_dict(file)
+            file = re.sub(r';', '', file)
+            file = [line for line in file.splitlines() if line.strip()]
+
+            file = ''.join(file)
+            file = re.sub(r'^\{(.*)\}$', r'\1', file)
+
+            # Extract data inside curly brackets
+            coeffsDict = re.findall(r'\{([^}]+)\}', file)
+            coeffsDict = coeffsDict[0].split()
+
+            h = convert_to_float(coeffsDict[coeffsDict.index('plateThickness') + 11])
+            nCorrectors = convert_to_int(coeffsDict[coeffsDict.index('nCorrectors') + 1])
+            alternativeTolerance = convert_to_float(coeffsDict[coeffsDict.index('alternativeTolerance') + 1])
+
+    except SyntaxError as e:
+        print(f'Syntax error: {e}')
+        sys.exit(1)
+    except FileNotFoundError:
+        print(f"Error: {path} not found!")
+        sys.exit(1)
+    except Exception as e:
+        print(f"An error occured: {e}")
+        sys.exit(1)
+
+    return h, nCorrectors, alternativeTolerance
+
 def readMechanicalProperties(path=MECHANICALPROPERTIES, convertToLameCoeffs=True) -> tuple[float, float]:
 
     print(f"Reading mechanicalProperties dict\n")
@@ -332,7 +368,7 @@ def readMechanicalProperties(path=MECHANICALPROPERTIES, convertToLameCoeffs=True
         sys.exit(1)
 
     if not convertToLameCoeffs:
-        print(f"E: {E:.5f}\n, nu: {nu:.5f}")
+        print(f"E: {E:.1f}, nu: {nu:.3f}")
         return E, nu
 
     mu = E / (2.0*(1.0 + nu))

@@ -1,0 +1,43 @@
+#!/bin/bash
+
+solversFolder="../../../applications/solvers"
+solver="kirchhoffPlate.py"
+
+# Source OpenFOAM for mesh generation and postProcessing options
+if [[ -z "${WM_PROJECT}" ]]
+then
+    # Check if OpenFOAM/FOAM has been sourced
+    echo "Please source the OpenFOAM/FOAM bashrc first!"
+    exit 1
+else
+    allowed_ver=("v2012" "v2106" "v2112" "v2206" "v2212" "v2306" "v2312" "v2406")
+    if ! [[ " ${allowed_ver[*]} " == *" $WM_PROJECT_VERSION "* ]]; then
+        echo "Unsupported OpenFOAM version sourced!"
+    fi
+fi
+
+# Check virtual environment version
+if [[ -z "$VIRTUAL_ENV" ]]; then
+    echo "Error: No virtual environment is active!" >&2
+    exit 1
+elif [[ "$(basename "$VIRTUAL_ENV")" != "venv-HoPyFoam" ]]; then
+    echo "Error: Wrong virtual environment is active!"
+    echo "Expected: venv-HoPyFoam, but found: $(basename "$VIRTUAL_ENV")" >&2
+    exit 1
+fi
+
+# Clean case
+./Allclean
+
+# Make mesh
+gmsh -3 -format msh2 plateMesh.geo > /dev/null 2>&1
+gmshToFoam plateMesh.msh > /dev/null 2>&1
+changeDictionary > /dev/null 2>&1
+sed -i '/physicalType/d' constant/polyMesh/boundary
+rm -rf plateMesh.msh
+
+# Generate source field (plate pressure)
+python platePressure.py
+
+# Solve
+python $solversFolder/$solver
