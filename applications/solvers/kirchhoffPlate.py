@@ -42,10 +42,10 @@ h, nCorrectors, alternativeTolerance = readSolidProperties()
 bendingStiffness = E*pow(h,3)/(12*(1-pow(nu,2)))
 
 # Initialise deflection scalar field w, N is interpolation order
-w = volScalarField("w", mesh, readScalarField("w"),  N=3)
+w = volScalarField("w", mesh, readScalarField("w"),  N=4)
 
 # Initialise moment sum  scalar field M, N is interpolation order
-M = volScalarField("M", mesh, readScalarField("M"),  N=3)
+M = volScalarField("M", mesh, readScalarField("M"),  N=4)
 
 while (solControl.loop()):
 

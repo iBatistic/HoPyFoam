@@ -1,43 +1,44 @@
 #!/bin/bash
 
-solversFolder="../../../applications/solvers"
-solver="kirchhoffPlate.py"
+SUFFIX="case"
+BASE="base"
 
-# Source OpenFOAM for mesh generation and postProcessing options
-if [[ -z "${WM_PROJECT}" ]]
+if [[ -d "${SUFFIX}.1" ]]
 then
-    # Check if OpenFOAM/FOAM has been sourced
-    echo "Please source the OpenFOAM/FOAM bashrc first!"
-    exit 1
-else
-    allowed_ver=("v2012" "v2106" "v2112" "v2206" "v2212" "v2306" "v2312" "v2406")
-    if ! [[ " ${allowed_ver[*]} " == *" $WM_PROJECT_VERSION "* ]]; then
-        echo "Unsupported OpenFOAM version sourced!"
-    fi
+    echo "Case ${SUFFIX}.1 already exists: please remove it"; echo
+    exit 1;
 fi
 
-# Check virtual environment version
-if [[ -z "$VIRTUAL_ENV" ]]; then
-    echo "Error: No virtual environment is active!" >&2
-    exit 1
-elif [[ "$(basename "$VIRTUAL_ENV")" != "venv-HoPyFoam" ]]; then
-    echo "Error: Wrong virtual environment is active!"
-    echo "Expected: venv-HoPyFoam, but found: $(basename "$VIRTUAL_ENV")" >&2
-    exit 1
-fi
+# Data file for errors
+touch "errors.txt"
 
-# Clean case
-./Allclean
+# Run cases
+for i in `seq 1 4`;
+do
+    CASE="${SUFFIX}.$i"
 
-# Make mesh
-gmsh -3 -format msh2 plateMesh.geo > /dev/null 2>&1
-gmshToFoam plateMesh.msh > /dev/null 2>&1
-changeDictionary > /dev/null 2>&1
-sed -i '/physicalType/d' constant/polyMesh/boundary
-rm -rf plateMesh.msh
+    # Copy template case
+    cp -r "${BASE}" "${CASE}"
 
-# Generate source field (plate pressure)
-python platePressure.py
+    # Enter the case
+    cd "${CASE}"
 
-# Solve
-python $solversFolder/$solver
+    # Copy mesh from meshes directory
+    cp system/plateMesh.geo."$i" plateMesh.geo
+
+    # Run the case
+    echo "Running case ${i}"
+    ./Allrun > /dev/null 2>&1
+
+    # Extract errors
+    echo "$(cat "errors.dat")" >> ../errors.txt
+
+    # Navigate back to the parent directory
+    cd ..
+done
+
+# Plot relative error convergence
+python plotRelError.py
+
+# Plot absolute error convergence
+python plotAbsError.py

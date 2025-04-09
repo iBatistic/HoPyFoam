@@ -36,7 +36,7 @@ mesh = fvMesh()
 solControl = solutionControl()
 
 # Initialise displacement vector field U, N is interpolation order
-U = volVectorField("U", mesh, readVectorField("U"),  N=3)
+U = volVectorField("U", mesh, readVectorField("U"),  N=1)
 
 # Read mechanichalProperties dict to get first and second Lame parameters
 mu, lam = readMechanicalProperties()

@@ -12,7 +12,7 @@ import sys
 import os
 import math
 
-sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/../../../.")
+sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/../../../../.")
 from src.finiteVolume.fvMesh import fvMesh
 from src.foam.foamFileParser import *
 from src.foam.argList import arg_parser
