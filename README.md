@@ -43,7 +43,6 @@ is similar to one from the [OpenFOAM](https://www.openfoam.com/) library.
     ```
     All tutorial cases have a corresponding `./Allrun` script to run them.
 
-    Installation is tested on .
 
 ### License
 
