@@ -25,7 +25,7 @@ kirchhoffPlateCoeffs
     plateThickness    plateThickness [ 0 1 0 0 0 0 0 ] 0.1;
 
     // Maximum number of momentum correctors
-    nCorrectors       100;
+    nCorrectors       10;
 
     // Solution tolerance for displacement
     solutionTolerance 1e-10;

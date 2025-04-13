@@ -42,10 +42,10 @@ h, nCorrectors, alternativeTolerance = readSolidProperties()
 bendingStiffness = E*pow(h,3)/(12*(1-pow(nu,2)))
 
 # Initialise deflection scalar field w, N is interpolation order
-w = volScalarField("w", mesh, readScalarField("w"),  N=4)
+w = volScalarField("w", mesh, readScalarField("w"),  N=1)
 
 # Initialise moment sum  scalar field M, N is interpolation order
-M = volScalarField("M", mesh, readScalarField("M"),  N=4)
+M = volScalarField("M", mesh, readScalarField("M"),  N=1)
 
 while (solControl.loop()):
 
@@ -83,14 +83,14 @@ while (solControl.loop()):
             np.max\
             (
                 np.abs(np.array(M._cellValues)-np.array(M.prevIter))
-                / max(np.max(np.abs(M._cellValues)), 1e-10)
+                / max(np.max(np.abs(M._cellValues)), 1e-12)
             )
 
         wResidual =\
             np.max\
             (
                 np.abs(np.array(w._cellValues) - np.array(w.prevIter))
-                / max(np.max(np.abs(w._cellValues)), 1e-10)
+                / max(np.max(np.abs(w._cellValues)), 1e-12)
             )
 
         print(f'\tIter {iCorr}, {momentumResidual:.5g}, {wResidual:.5g}, '

@@ -107,7 +107,7 @@ class volField(field, volFieldBoundaryConditions):
         """
         Returns the number of terms in Taylor polynomial of order N.
         """
-        TaylorTerms2D = {1: 3, 2: 6, 3: 10}
+        TaylorTerms2D = {1: 3, 2: 6, 3: 10, 4: 15}
 
         if twoD:
             if N in TaylorTerms2D:
@@ -123,7 +123,7 @@ class volField(field, volFieldBoundaryConditions):
         Returns the stencil size based on the dimensionality and the stencil
         order.
         """
-        stencilSize2D = {1: 14, 2: 16, 3: 20}
+        stencilSize2D = {1: 14, 2: 16, 3: 20, 4: 26}
 
         if twoD:
             if N in stencilSize2D:

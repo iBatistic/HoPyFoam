@@ -39,7 +39,7 @@ D = E*pow(h,3)/(12*(1-pow(nu,2)))
 a = 10
 b = 10
 p = 1000
-N = 50
+N = 80
 
 for cellI in range(mesh.nCells):
 
@@ -72,9 +72,10 @@ relError = 100 * np.sqrt(diffSquared / squaredAnalytical)
 absError = np.sqrt(diffSquared / volume)
 
 print(f'\nAverage relative error: {relError:.6f} %')
-print(f'\nAverage absolute error: {absError:.6f} %')
+print(f'\nAverage absolute error: {absError:.6f}')
 
 fileName = "errors.dat"
+
 # Remove old file with results
 if (os.path.exists(fileName)):
     os.remove(fileName)
