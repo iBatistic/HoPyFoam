@@ -16,6 +16,7 @@ from src.foam.field import field
 from src.foam.foamFileParser import *
 from src.foam.field.volField import *
 from src.foam.field import localRegressionEstimator
+from src.foam.field.GaussianQuadrature import GaussianQuadrature
 
 from src.foam.field.volField.volFieldBoundaryConditions import *
 from src.foam.decorators import timed
@@ -39,6 +40,9 @@ class volField(field, volFieldBoundaryConditions):
 
         # Number of integration points per CV face
         self._GaussPointsNb = self.integrationPointsNb(mesh.twoD, N)
+
+        # Number of integration points per cell
+        self._cellGaussPointsNb = GaussianQuadrature.nbOfQuadPoints(N)
 
         print(f'Field {fieldName}, N: {self._N}, Np: {self._Np}, Nn: {self.Nn},  Ng: {self._GaussPointsNb}')
 
@@ -68,6 +72,7 @@ class volField(field, volFieldBoundaryConditions):
         # Make Gauss points on faces and corresponding weights
         print(f"Calculating Gauss integration points for field {self._fieldName}")
         self._facesGaussPointsAndWeights = self.makeFacesGaussPointsAndWeights(self._boundaryConditionsDict, mesh)
+        self._cellsGaussPointsAndWeights = self.makeCellsGaussPointsAndWeights(mesh)
 
         # Local Regression Estimator
         # Coefficients are calculated on object initialisation
@@ -90,6 +95,10 @@ class volField(field, volFieldBoundaryConditions):
     @property
     def Ng(self) -> int:
         return self._GaussPointsNb
+
+    @property
+    def cellNg(self) -> int:
+        return self._cellGaussPointsNb
 
     # Return number of neighbours for this field type
     @property
@@ -228,7 +237,7 @@ class volField(field, volFieldBoundaryConditions):
         return facesMolecule
 
     def makeCellsInterpolationMolecule(self) -> list[int]:
-
+        print("----> volField.py: makeCellsInterpolationMolecule is assuming that all boundaries are ghost boundaries!")
         cellsMolecule = []
 
         mesh = self._mesh
@@ -275,12 +284,9 @@ class volField(field, volFieldBoundaryConditions):
         # Each face has list of corresponding Gauss points and their weights
         facesGaussPointsAndWeights = []
 
-        # If the mesh is 2D, Gauss points are calculated in one plane
+        # If the mesh is 2D, Gauss points are calculated in 1D
         emptyDir = None
         if mesh.twoD:
-            print(f"Empty patch found, Gauss points are calculated in"
-                  f" X-Y plane\n")
-
             emptyDir = 2
 
         # Loop over all faces and calculate Gauss points and weights
@@ -290,4 +296,27 @@ class volField(field, volFieldBoundaryConditions):
             facesGaussPointsAndWeights.insert(faceI,[weights, GaussPoints])
 
         return facesGaussPointsAndWeights
+
+    def makeCellsGaussPointsAndWeights(self, mesh) -> list[list[np.ndarray]]:
+
+        # Each cell has list of corresponding Gauss points and their weights
+        cellGaussPointsAndWeights = []
+
+        # Loop over all cells and calculate Gauss points and weights on face
+        # that lies on empty patch with positive normal
+        for cellI in range(mesh.nCells):
+            curCellFaces = mesh.cellFaces[cellI]
+
+            for curCellFace in curCellFaces:
+                # Face with positive normal
+                d = np.dot(mesh.nf[curCellFace], np.array([0, 0, 1]))
+                if 0.999 < d < 1.001:
+                    face = mesh.faces[curCellFace]
+                    GaussPoints, weights = face.GaussPointsAndWeights(None, None, self.N)
+
+                    cellGaussPointsAndWeights.insert(cellI,[weights, GaussPoints])
+                    break  # Skip the rest of the faces for this cell
+
+
+        return cellGaussPointsAndWeights
 

@@ -4,6 +4,8 @@
 |     | . |   __| | |   __|  |  |     | | | |   |  Code Version: 0.0
 |__|__|___|__|  |_  |__|  |_____|__|__|_|_|_|   |  License: GPLv3
                 |___|
+Description
+    Source term with integration of source at cell Gauss points.
 """
 __author__ = 'Ivan Batistić & Philip Cardiff'
 __email__ = 'ibatistic@fsb.unizg.hr, philip.cardiff@ucd.ie'
@@ -53,6 +55,7 @@ class Su():
         source.set(0.0)
         source.setUp()
 
+        # Second order implementation
         for cellI in range(mesh.nCells):
             V = mesh.V[cellI]
 
@@ -82,9 +85,38 @@ class Su():
         source.set(0.0)
         source.setUp()
 
+        GaussPointsAndWeights = psi._cellsGaussPointsAndWeights
+
+        # Loop over cells
         for cellI in range(mesh.nCells):
+
+            # List of cell Gauss points [1] and weights [0]
+            cellGaussPointsAndWeights = GaussPointsAndWeights[cellI]
+
+            # Current cell interpolation stencil
+            cellStencil = psi._cellsInterpolationMolecule[cellI]
+
+            # Cell volume
             V = mesh.V[cellI]
-            source.setValues(cellI, np.array(psi._cellValues[cellI]) * V, ADD)
+
+            # Loop over cell Gauss points
+            for i, gp in enumerate(cellGaussPointsAndWeights[1]):
+
+                # Gauss point gp weight
+                gpW = cellGaussPointsAndWeights[0][i]
+
+                # Gauss point interpolation coefficient vector for each neighbouring cell
+                c = psi.LRE().internalCellCoeffs[cellI][i]
+
+                # Loop over Gauss point interpolation stencil and add
+                # stencil cells contribution to matrix
+                for j, cellIndex in enumerate(cellStencil):
+
+                    value = gpW * V * c[j] * np.array(psi._cellValues[cellIndex])
+
+                    source.setValues(cellI, value, ADD)
+
+                    # What about boundary??
 
         # Finish matrix assembly
         A.assemble()

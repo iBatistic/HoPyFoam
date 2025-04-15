@@ -12,14 +12,21 @@ import math
 
 grid_size = []
 error_values_N1 = []
+error_values_N1_corrected = []
 error_values_N2 = []
+error_values_N2_corrected = []
 error_values_N3 = []
+error_values_N3_corrected = []
 error_values_N4 = []
 
 fileName = 'errors_N1.txt'
 fileName2 = 'errors_N2.txt'
 fileName3 = 'errors_N3.txt'
 fileName4 = 'errors_N4.txt'
+
+fileName_corrected = 'errors_N1.txt'
+fileName2_corrected = 'errors_N2_corrected.txt'
+fileName3_corrected = 'errors_N3_corrected.txt'
 
 with open(fileName, 'r') as file:
     for line in file:
@@ -42,6 +49,22 @@ with open(fileName4, 'r') as file:
         parts = line.split()
         error_values_N4.append(float(parts[2]))
         
+        
+with open(fileName_corrected, 'r') as file:
+    for line in file:
+        parts = line.split()
+        error_values_N1_corrected.append(float(parts[2]))
+        
+with open(fileName2_corrected, 'r') as file:
+    for line in file:
+        parts = line.split()
+        error_values_N2_corrected.append(float(parts[2]))
+     
+with open(fileName3_corrected, 'r') as file:
+    for line in file:
+        parts = line.split()
+        error_values_N3_corrected.append(float(parts[2]))
+        
 fig=plt.figure(figsize=(7,8))
 
 plt.rc('text', usetex=True)
@@ -51,32 +74,57 @@ plt.rc('ytick',labelsize=10)
 plt.xlabel('Grid size',fontsize=12)
 plt.ylabel('Error',fontsize=12)
 plt.grid(True, which='major', color='black', linestyle='-', linewidth=0.1)
-plt.title('Absolute error convergence')
+#plt.title('Relative error convergence')
 plt.yscale('log')
 plt.xscale('log')
+plt.ylim(0.5e-4, 10)
 
 plt.plot( \
     grid_size, \
     error_values_N1, \
-    color='blue',linestyle='solid',linewidth=2.2,alpha=1, \
+    color='blue',linestyle='solid',linewidth=1.5,alpha=1, \
     marker='o', markersize=8, markerfacecolor='none', \
     zorder=1, label='HoPyFOAM - 2 order'
 )
 
 plt.plot( \
     grid_size, \
+    error_values_N1_corrected, \
+    color='blue',linestyle='solid',linewidth=2.8,alpha=1, \
+    marker='s', markersize=8, markerfacecolor='none', \
+    zorder=1, label='HoPyFOAM - 2 order (corrected integration)'
+)
+
+plt.plot( \
+    grid_size, \
     error_values_N2, \
-    color='green',linestyle='solid',linewidth=2.2,alpha=1, \
+    color='green',linestyle='solid',linewidth=1.5,alpha=1, \
     marker='o', markersize=8, markerfacecolor='none', \
     zorder=1, label='HoPyFOAM - 3 order'
 )
 
 plt.plot( \
     grid_size, \
+    error_values_N2_corrected, \
+    color='green',linestyle='solid',linewidth=2.8,alpha=1, \
+    marker='o', markersize=10, markerfacecolor='green', \
+    zorder=1, label='HoPyFOAM - 3 order (corrected integration)'
+)
+
+plt.plot( \
+    grid_size, \
     error_values_N3, \
-    color='red',linestyle='solid',linewidth=2.2,alpha=1, \
+    color='red',linestyle='solid',linewidth=1.5,alpha=1, \
     marker='o', markersize=8, markerfacecolor='none', \
     zorder=1, label='HoPyFOAM - 4 order'
+)
+
+plt.plot( \
+    grid_size, \
+    error_values_N3_corrected, \
+    color='red',linestyle='solid',linewidth=2.8,alpha=1, \
+    marker='o', markersize=10, markerfacecolor='red', \
+    zorder=1, label='HoPyFOAM - 4 order (corrected integration)'
 )
 
 #plt.plot( \
@@ -99,11 +147,11 @@ L_2 = order(grid_size, 2, error_values_N1[0]*1.1)
 L_2_t = order(grid_size, 2, error_values_N1[0]*0.172)
 L_2_tt = order(grid_size, 2, error_values_N1[0]*0.065)
 L_3 = order(grid_size, 3, error_values_N3[0]*1.91)
-L_4 = order(grid_size, 4, error_values_N3[0]*1.51)
+L_4 = order(grid_size, 4, error_values_N3[0]*0.045)
 plt.plot( grid_size, L_2, '--', color = "blue", linewidth = 1.5, label='Theoretical slope - 2 order')
 plt.plot( grid_size, L_2_t, '--', color = "blue", linewidth = 1.5, label='')
 plt.plot( grid_size, L_2_tt, '--', color = "blue", linewidth = 1.5, label='')
-plt.plot( grid_size, L_3, '--', color = 'green', linewidth = 1.5, label='Theoretical slope - 3 order')
+#plt.plot( grid_size, L_3, '--', color = 'green', linewidth = 1.5, label='Theoretical slope - 3 order')
 plt.plot( grid_size, L_4, '--', color = 'red',  linewidth = 1.5, label='Theoretical slope - 4 order')
 
 plt.legend()

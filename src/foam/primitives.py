@@ -10,6 +10,7 @@ Description
 import sys
 
 import numpy as np
+from src.foam.field.GaussianQuadrature import GaussianQuadrature
 
 class face():
     def __init__(self, facePoints):
@@ -56,14 +57,16 @@ class face():
 
         return centre
 
-    def GaussPointsAndWeights(self, GaussPoinsNb, emptyDir) -> ([np.ndarray], [np.ndarray]):
+
+    def GaussPointsAndWeights(self, GaussPoinsNb, emptyDir, rule=None) -> ([np.ndarray], [np.ndarray]):
 
         if emptyDir is None:
-            # 3D case, Gauss points are distributed on face
-            # TO_DO
-            sys.exit(1)
+            # Gauss points are distributed on face
+            # GaussianQuadrature class stores data for points location and weights
+            return GaussianQuadrature.faceGaussPoints(rule, self._facePoints), GaussianQuadrature.weights(rule)
+
         else:
-            # 2D case, Gauss points are distributed on the line
+            # Gauss points are distributed on the line
             GaussPoints, weights = np.polynomial.legendre.leggauss(GaussPoinsNb)
 
             # Normalize the weights

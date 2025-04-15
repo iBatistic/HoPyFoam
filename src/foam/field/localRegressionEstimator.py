@@ -22,7 +22,7 @@ from src.foam.decorators import timed
 
 class localRegressionEstimator():
 
-    def __init__(self, volField, mesh, cellLRE=False, k=6, cond_threshold=1e12):
+    def __init__(self, volField, mesh, cellCentreLRE=False, k=6, cond_threshold=1e12):
         self._volField = volField
         self._mesh = mesh
         # Shape parameter of the kernel
@@ -39,12 +39,15 @@ class localRegressionEstimator():
         # Boundary faces Gauss points LRE coefficients with ghost points
         self._bgC, self._bgCx = self.makeBouCoeffs(volField, mesh, True)
 
-        if cellLRE:
-            self._cellCx = self.makeCellGradCoeffs(volField, mesh)
+        if cellCentreLRE:
+            self._cellCentreCx = self.makeCellCentreGradCoeffs(volField, mesh)
+
+        # Cell Gauss points LRE coefficients
+        self._cellC, self._cellCx = self.makeCellIntCoeffs(mesh)
 
     @property
     def cellGradCoeffs(self):
-        return self._cellCx
+        return self._cellCentreCx
 
     @property
     def internalGradCoeffs(self):
@@ -70,9 +73,17 @@ class localRegressionEstimator():
     def boundaryCoeffsGhost(self):
         return self._bgC
 
+    @property
+    def internalCellCoeffs(self):
+        return self._cellC
+
     def makeIntCoeffs(self, volField, mesh):
         """Calculate the interpolation coefficients for internal faces."""
         return self.makeCoeffs(mesh.nInternalFaces)
+
+    def makeCellIntCoeffs(self, mesh):
+        """Calculate the interpolation coefficients for internal cells (faces)."""
+        return self.makeCellCoeffs(mesh)
 
     def makeBouCoeffs(self, volField, mesh, ghostBoundaryPoint):
         """Calculate the interpolation coefficients for boundary faces."""
@@ -109,6 +120,129 @@ class localRegressionEstimator():
                                   cz_[point][cellN]]))
 
         return c, cx
+
+    def makeCellIntCoeffs(self, mesh) -> tuple[list[list[float]], list[list[np.ndarray]]]:
+        """
+        Generalized function to calculate interpolation coefficients for
+        cells (faces in 2D).
+
+        Args:
+
+        Returns:
+            Tuple containing:
+            - c: List of coefficients.
+            - cx: List of gradient coefficients.
+        """
+
+        c = [[] for _ in range(mesh.nCells)]
+        cx = [[[] for _ in range(self._volField.cellNg)] for _ in range(mesh.nCells)]
+
+        for cellI in range(mesh.nCells):
+             c_, cx_, cy_, cz_ = self.makeCellCoeffs(cellI)
+             c[cellI].extend(c_)
+
+             for point in range(self._volField.cellNg):
+                 for cellN in range(self._volField.Nn):
+                     cx[cellI][point].append(\
+                         np.array([cx_[point][cellN],\
+                                   cy_[point][cellN],\
+                                   cz_[point][cellN]]))
+
+        return c, cx
+
+
+    def makeCellCoeffs(self, cellI):
+
+        c = []
+        cx = []
+        cy = []
+        cz = []
+
+        volField = self._volField
+        mesh = self._mesh
+
+        # Interpolation molecule is assuming all Dirichlet boundaries
+        molecule = volField._cellsInterpolationMolecule[cellI]
+
+        # Molecule size (this is equal to volField.Nn only at interior cells)
+        Nn=len(molecule)
+
+        # Number of terms in Taylor expression
+        Np = volField.Np
+
+        # Taylor polynomial order
+        N = volField.N
+
+        cellGaussPoints = [_[1] for _ in volField._cellsGaussPointsAndWeights][cellI]
+
+        # Loop over cell neighbours Nn and find max distance
+        rs = 0.0
+        for i in range(Nn):
+            neiC = mesh.C[molecule[i]]
+            rsNew = max(rs, np.linalg.norm(mesh.C[cellI] - neiC))
+            rs = rsNew
+
+        # Loop over cell Gauss points
+        for gpI in cellGaussPoints:
+
+            Q = np.zeros((volField.Np, volField.Nn))
+            W = np.zeros((volField.Nn, volField.Nn))
+
+            # Loop over neighbours Nn and construct matrix Q, each neighbour
+            # cell have its row (n-th column of Q is q(xn-x))
+            for i in range(Nn):
+                # Neighbour cell centre
+                neiC = mesh.C[molecule[i]]
+
+                # Taylor series terms calculated using nested for loops
+                pos = int(0)
+                for I in range(N + 1):
+                    for J in range(N - I + 1):
+                        fact = math.factorial(I) * math.factorial(J)
+                        Q[pos, i] = (pow(neiC[0] - gpI[0], I) * pow(neiC[1] - gpI[1], J) * (1.0 / fact))
+                        pos += 1;
+
+            # Loop over neighbours Nn and construct matrix W (diagonal matrix)
+            w_diag = np.zeros(volField.Nn)
+            for i in range(Nn):
+                neiC = mesh.C[molecule[i]]
+                dist = np.linalg.norm(neiC - gpI)
+                w_diag[i] = self.weight(abs(dist), rs)
+
+            # TO_DO - I have zeros at these locations, maybe that is ok but I'm not sure
+            #if ghostBoundaryPoint:
+                # Add ghost point at boundary Gauss point location
+            #       w_diag[-1] = 1.0
+            #        Q[0][-1] = 1.0
+
+            # Replace diagonal of W with calculated one w_diag
+            diagonal_indices = np.diag_indices(W.shape[0])
+            W[diagonal_indices] = w_diag
+
+            Qhat = Q @ np.diag(np.sqrt(np.diag(W)))
+
+            # Perform QR decomposition
+            O, R = np.linalg.qr(Qhat.T, mode='reduced')
+
+            Bhat = np.diag(np.sqrt(np.diag(W))) @ np.eye(len(w_diag))
+
+            Rbar = R[:Np, :Np]
+            Qbar = O[:, :Np]
+
+            # In numpy there is no canonical way to compute the inverse
+            # of an upper triangular matrix.
+            A = np.linalg.solve(Rbar, Qbar.T @ Bhat)
+
+            condNumber = np.linalg.cond(Rbar)
+            if condNumber > self._cond_threshold:
+                logging.warning(f"High condition number (> {self._cond_threshold}) detected for face {cellI}.")
+
+            c.append(list(A[0, :]))
+            cx.append(list(A[1 + N, :]))
+            cy.append(list(A[1, :]))
+            cz.append([0.0 for _ in range(len(list(A[1, :])))])
+
+        return c, cx, cy, cz
 
     def makeFaceCoeffs(self, faceI, ghostBoundaryPoint=False):
 
@@ -211,7 +345,7 @@ class localRegressionEstimator():
 
         return c, cx, cy, cz
 
-    def makeCellGradCoeffs(self, volField, mesh):
+    def makeCellCentreGradCoeffs(self, volField, mesh):
 
         # Cell interpolation molecules
         molecules = volField._cellsInterpolationMolecule

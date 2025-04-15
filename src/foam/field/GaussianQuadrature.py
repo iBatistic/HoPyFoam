@@ -134,6 +134,29 @@ class GaussianQuadrature():
     def __init__(self):
         pass
 
+    @staticmethod
+    def nbOfQuadPoints(rule):
+        return len(TRIANGLE[rule]['points'])
+
+    @staticmethod
+    def weights(rule):
+        return TRIANGLE[rule]['weights']
+
+    @staticmethod
+    def faceGaussPoints(rule, points):
+
+        GPoints = TRIANGLE[rule]['points']
+        facePoints = []
+
+        for i in range(len(GPoints)):
+            x = GPoints[i, 0] * points[0, 0] + GPoints[i, 1] * points[1, 0] + GPoints[i, 2] * points[2, 0]
+            y = GPoints[i, 0] * points[0, 1] + GPoints[i, 1] * points[1, 1] + GPoints[i, 2] * points[2, 1]
+            z = 0
+            facePoints.append([x, y, z])
+
+        return np.array(facePoints)
+
+
     def integrateTriangle(self, points, func, rule):
 
         GPoints = TRIANGLE[rule]['points']
