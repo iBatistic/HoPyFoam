@@ -10,13 +10,13 @@ then
     echo "Please source the OpenFOAM/FOAM bashrc first!"
     exit 1
 else
-    allowed_ver=("v2012" "v2106" "v2112" "v2206" "v2212" "v2306" "v2312")
+    allowed_ver=("v2012" "v2106" "v2112" "v2206" "v2212" "v2306" "v2312" "v2412")
     if ! [[ " ${allowed_ver[*]} " == *" $WM_PROJECT_VERSION "* ]]; then
         echo "Unsupported OpenFOAM version sourced!"
     fi
 fi
 
-# Check virtual environment version    
+# Check virtual environment version
 if [[ -z "$VIRTUAL_ENV" ]]; then
     echo "Error: No virtual environment is active!" >&2
     exit 1

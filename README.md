@@ -24,12 +24,24 @@ is similar to one from the [OpenFOAM](https://www.openfoam.com/) library.
 3. Install the necessary packages (**macOS Sequoia**):
     ```
     brew install open-mpi
+    brew install gmsh
     ```
 
 4. Required python are listed in `requirements.txt` and can be installed easily with `venv`:
 
     ```
     virtualenv venv-HoPyFoam
+    ```
+
+    above command on macOS is:
+
+    ```
+    python3 -m venv venv-HoPyFoam
+    ```
+
+    Source virtual environment  and install required packages:
+
+    ```
     source venv-HoPyFoam/bin/activate
     pip install -r requirements.txt
     ```
